@@ -27,7 +27,7 @@ from core.views import (
     complete_chore,
     redeem_reward
 )
-from chores.views import CreateChoreView
+from chores.views import CreateChoreView, EditChoreView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,6 +35,7 @@ urlpatterns = [
     path('setup/members/', SetupWizardMembersView.as_view(), name='setup_wizard_members'),
     path('invite/', InviteSignupView.as_view(), name='invite_signup'),
     path('chores/create/', CreateChoreView.as_view(), name='create_chore'),
+    path('chores/<int:pk>/edit/', EditChoreView.as_view(), name='edit_chore'),
     path('chores/<int:pk>/claim/', claim_chore, name='claim_chore'),
     path('chores/<int:pk>/complete/', complete_chore, name='complete_chore'),
     path('rewards/<int:pk>/redeem/', redeem_reward, name='redeem_reward'),

@@ -135,6 +135,7 @@ class Chore(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    current_rotation_index = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'chores'
@@ -146,6 +147,32 @@ class Chore(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.household.name})"
+
+
+class ChoreRotation(models.Model):
+    """
+    Defines the rotation pool for a rotating chore.
+    """
+    chore = models.ForeignKey(
+        Chore,
+        on_delete=models.CASCADE,
+        related_name='rotations'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='chore_rotations'
+    )
+    position = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'chore_rotations'
+        unique_together = [['chore', 'user']]
+        ordering = ['position', 'id']
+
+    def __str__(self):
+        return f"{self.chore.title} - {self.user.full_name or self.user.email or self.user.id} (pos {self.position})"
 
 
 class ChoreInstance(models.Model):

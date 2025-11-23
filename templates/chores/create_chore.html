@@ -9,9 +9,10 @@
             <div class="flex items-center justify-between flex-col md:flex-row gap-3 mb-6">
                 <div>
                     <p class="text-sm uppercase text-primary tracking-widest font-semibold">Chore Builder</p>
-                    <h1 class="text-3xl font-bold text-gray-900">Create a new chore</h1>
-                    <p class="text-gray-600 mt-1">Admins/owners can create chores. Global chores can be claimed by
-                        anyone.</p>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        {% if edit_mode %}Edit chore{% else %}Create a new chore{% endif %}
+                    </h1>
+                    <p class="text-gray-600 mt-1">Admins/owners can create chores. Global chores can be claimed by anyone.</p>
                 </div>
                 <a href="{% url 'home' %}?household={{ selected_household.id }}"
                     class="text-primary font-semibold hover:underline">Back to dashboard</a>
@@ -235,7 +236,7 @@
                         class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</a>
                     <button type="submit"
                         class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition">
-                        Create chore
+                        {% if edit_mode %}Update chore{% else %}Create chore{% endif %}
                     </button>
                     <div class="flex items-center text-sm text-gray-500">
                         <span class="mr-2">Effort/points preview:</span>

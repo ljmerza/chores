@@ -128,7 +128,7 @@ class CreateChoreForm(forms.Form):
         widget=forms.SelectMultiple(attrs={'class': TAILWIND_SELECT_CLASS})
     )
 
-    def __init__(self, *args, user=None, household=None, **kwargs):
+    def __init__(self, *args, user=None, household=None, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user:
             households = Household.objects.filter(memberships__user=user).distinct()
@@ -149,8 +149,44 @@ class CreateChoreForm(forms.Form):
             if not self.is_bound:
                 self.fields['rotation_users'].initial = list(self.fields['rotation_users'].queryset.values_list('id', flat=True))
 
-        # Default selections for convenience
-        if not self.is_bound:
+        if instance and not self.is_bound:
+            self.fields['title'].initial = instance.title
+            self.fields['description'].initial = instance.description
+            self.fields['household'].initial = instance.household_id
+            self.fields['assignment_type'].initial = instance.assignment_type
+            self.fields['assigned_to'].initial = instance.assigned_to_id
+            self.fields['priority'].initial = instance.priority
+            self.fields['base_points'].initial = instance.base_points
+            self.fields['difficulty'].initial = instance.difficulty
+            self.fields['due_date'].initial = instance.due_date
+            self.fields['requires_verification'].initial = instance.requires_verification
+            self.fields['verification_photo_required'].initial = instance.verification_photo_required
+            self.fields['rotation_users'].initial = list(
+                instance.rotations.values_list('user_id', flat=True)
+            )
+
+            # Recurrence initial
+            pattern = instance.recurrence_pattern or 'weekly'
+            data = instance.recurrence_data or {}
+            interval = data.get('interval', 1)
+            months = data.get('months_of_year') or []
+            self.fields['is_recurring'].initial = pattern != 'none'
+            self.fields['frequency'].initial = pattern if pattern in ['daily', 'weekly', 'monthly'] else 'weekly'
+            self.fields['interval_value'].initial = interval
+            self.fields['days_of_week'].initial = data.get('days_of_week') or []
+            self.fields['months_of_year'].initial = months
+
+            if pattern == 'monthly':
+                mode = data.get('monthly_mode', 'day')
+                self.fields['monthly_mode'].initial = mode
+                if mode == 'day':
+                    self.fields['day_of_month'].initial = data.get('day_of_month')
+                else:
+                    self.fields['week_of_month'].initial = data.get('week_of_month')
+                    self.fields['weekday_of_month'].initial = data.get('weekday_of_month')
+
+        # Default selections for convenience (only when creating)
+        if not self.is_bound and not instance:
             today = timezone.localdate()
             weekday_idx = today.weekday()  # 0=Mon
             weekday_map = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
