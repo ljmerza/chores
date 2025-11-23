@@ -73,6 +73,14 @@
                         <p class="text-xs text-red-500 mt-1">{{ form.assigned_to.errors.0 }}</p>
                         {% endif %}
                     </div>
+                    <div id="rotation-wrapper" data-disable-wrapper="rotation">
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Rotation users (for rotating)</label>
+                        {{ form.rotation_users }}
+                        {% if form.rotation_users.errors %}
+                        <p class="text-xs text-red-500 mt-1">{{ form.rotation_users.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">Defaults to everyone; pick who participates in the rotation.</p>
+                    </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-800 mb-1">Priority</label>
                         {{ form.priority }}
@@ -138,6 +146,7 @@
                                     {% endif %}
                                 </div>
                                 <div>
+                                    <p class="text-sm text-gray-700 mb-1">Interval unit</p>
                                     <p id="interval-unit-label" class="text-sm font-semibold text-gray-900">weeks</p>
                                     <p class="text-xs text-gray-500">Changes with frequency (days/weeks/months).</p>
                                 </div>
@@ -199,6 +208,11 @@
                                 {% endif %}
                                 <p class="text-xs text-gray-500 mt-1">Limit to certain months (e.g., summer tasks).</p>
                             </div>
+
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Summary</p>
+                                <p id="recurrence-summary" class="text-sm text-gray-800">Repeats based on the settings above.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -212,8 +226,7 @@
                             {{ form.verification_photo_required }}
                             <span class="text-sm text-gray-800">Photo required</span>
                         </label>
-                        <p class="text-xs text-gray-500">Admins can approve completed chores when verification is on.
-                        </p>
+                        <p class="text-xs text-gray-500">Admins/owners can approve completed chores when verification is on.</p>
                     </div>
                 </div>
 
@@ -224,6 +237,10 @@
                         class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition">
                         Create chore
                     </button>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <span class="mr-2">Effort/points preview:</span>
+                        <span id="points-preview" class="font-semibold text-gray-800">{{ form.base_points.value|default:form.base_points.initial|default:10 }} pts · {{ form.difficulty.value|default:form.difficulty.initial|default:"medium" }}</span>
+                    </div>
                 </div>
             </form>
         </div>
@@ -249,6 +266,12 @@
         const assignmentType = document.getElementById("id_assignment_type");
         const assignee = document.getElementById("id_assigned_to");
         const assigneeWrapper = document.getElementById("assignee-wrapper");
+        const rotationWrapper = document.getElementById("rotation-wrapper");
+        const rotationUsers = document.getElementById("id_rotation_users");
+        const summaryEl = document.getElementById("recurrence-summary");
+        const pointsInput = document.getElementById("id_base_points");
+        const difficultyInput = document.getElementById("id_difficulty");
+        const pointsPreview = document.getElementById("points-preview");
 
         function setDisabled(el, disabled) {
             if (!el) return;
@@ -259,6 +282,42 @@
             const wrapper = el.closest('[data-disable-wrapper]') || el.parentElement;
             if (!wrapper) return;
             wrapper.classList.toggle('opacity-50', disabled);
+        }
+
+        function describeRecurrence() {
+            if (!isRecurring?.checked) return "One-time chore (no recurrence).";
+
+            const freq = frequency?.value || 'weekly';
+            const interval = intervalValue?.value || '1';
+            const days = Array.from(daysOfWeek?.selectedOptions || []).map(o => o.textContent.trim());
+            const monthsSelected = Array.from(months?.selectedOptions || []).map(o => o.textContent.trim());
+            const mode = monthlyMode?.value || 'day';
+
+            let parts = [`Every ${interval} ${freq === 'daily' ? 'day' : freq === 'weekly' ? 'week' : 'month'}`];
+            if (parseInt(interval, 10) > 1) {
+                parts[0] += 's';
+            }
+
+            if (days.length) {
+                parts.push(`on ${days.join(', ')}`);
+            }
+
+            if (freq === 'monthly') {
+                if (mode === 'day' && dayOfMonth?.value) {
+                    parts.push(`on day ${dayOfMonth.value}`);
+                }
+                if (mode !== 'day' && weekOfMonth?.value && weekdayOfMonth?.value) {
+                    const womText = weekOfMonth.selectedOptions[0]?.textContent.trim();
+                    const womDayText = weekdayOfMonth.selectedOptions[0]?.textContent.trim();
+                    parts.push(`on the ${womText} ${womDayText}`);
+                }
+            }
+
+            if (monthsSelected.length) {
+                parts.push(`active in ${monthsSelected.join(', ')}`);
+            }
+
+            return parts.join(' ');
         }
 
         function updateVisibility() {
@@ -303,12 +362,35 @@
             const assigned = assignVal === 'assigned';
             assigneeWrapper.style.opacity = assigned ? '1' : '0.5';
             setDisabled(assignee, !assigned);
+
+            const rotating = assignVal === 'rotating';
+            rotationWrapper?.classList.toggle('opacity-50', !rotating);
+            setDisabled(rotationUsers, !rotating);
+
+            if (summaryEl) {
+                summaryEl.textContent = describeRecurrence();
+            }
+
+            if (pointsPreview) {
+                const pts = pointsInput?.value || '';
+                const diff = difficultyInput?.selectedOptions?.[0]?.textContent.trim() || difficultyInput?.value || 'Medium';
+                pointsPreview.textContent = `${pts || '—'} pts · ${diff}`;
+            }
         }
 
         isRecurring?.addEventListener('change', updateVisibility);
         frequency?.addEventListener('change', updateVisibility);
         monthlyMode?.addEventListener('change', updateVisibility);
         assignmentType?.addEventListener('change', updateVisibility);
+        pointsInput?.addEventListener('input', updateVisibility);
+        difficultyInput?.addEventListener('change', updateVisibility);
+        rotationUsers?.addEventListener('change', updateVisibility);
+        months?.addEventListener('change', updateVisibility);
+        daysOfWeek?.addEventListener('change', updateVisibility);
+        dayOfMonth?.addEventListener('input', updateVisibility);
+        weekOfMonth?.addEventListener('change', updateVisibility);
+        weekdayOfMonth?.addEventListener('change', updateVisibility);
+        intervalValue?.addEventListener('input', updateVisibility);
         document.addEventListener('DOMContentLoaded', updateVisibility);
         updateVisibility();
     })();

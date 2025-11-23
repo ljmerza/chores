@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
 from core.models import User
@@ -72,6 +73,10 @@ class CreateChoreView(LoginRequiredMixin, TemplateView):
                 priority=data.get('priority', 'medium')
             )
 
+            messages.success(
+                request,
+                f'Chore "{chore.title}" created. Edit in admin: /admin/chores/chore/{chore.id}/change/'
+            )
             return redirect(f"{redirect('home').url}?household={chore.household.id}")
 
         return render(request, self.template_name, {

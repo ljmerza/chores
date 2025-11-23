@@ -48,12 +48,18 @@ class CreateChoreForm(forms.Form):
     )
     assignment_type = forms.ChoiceField(
         choices=Chore.ASSIGNMENT_TYPE_CHOICES,
+        initial='global',
         widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
     )
     assigned_to = forms.ModelChoiceField(
         queryset=User.objects.none(),
         required=False,
         widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
+    )
+    rotation_users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': TAILWIND_SELECT_CLASS})
     )
     base_points = forms.IntegerField(
         min_value=1,
@@ -136,6 +142,27 @@ class CreateChoreForm(forms.Form):
             self.fields['assigned_to'].label_from_instance = (
                 lambda obj: obj.full_name or obj.email or f"User {obj.id}"
             )
+            self.fields['rotation_users'].queryset = self.fields['assigned_to'].queryset
+            self.fields['rotation_users'].label_from_instance = (
+                lambda obj: obj.full_name or obj.email or f"User {obj.id}"
+            )
+            if not self.is_bound:
+                self.fields['rotation_users'].initial = list(self.fields['rotation_users'].queryset.values_list('id', flat=True))
+
+        # Default selections for convenience
+        if not self.is_bound:
+            today = timezone.localdate()
+            weekday_idx = today.weekday()  # 0=Mon
+            weekday_map = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+            self.fields['days_of_week'].initial = [weekday_map[weekday_idx]]
+            self.fields['day_of_month'].initial = today.day
+
+        # Add error styling if needed
+        if self.errors:
+            for name, field in self.fields.items():
+                if name in self.errors:
+                    existing = field.widget.attrs.get('class', '')
+                    field.widget.attrs['class'] = f"{existing} border-red-400 focus:border-red-400 focus:ring-red-300".strip()
 
     def clean(self):
         cleaned = super().clean()
@@ -157,6 +184,9 @@ class CreateChoreForm(forms.Form):
             cleaned['recurrence_pattern'] = 'none'
             cleaned['recurrence_data'] = {}
             return cleaned
+
+        if interval and interval < 1:
+            self.add_error('interval_value', 'Interval must be at least 1.')
 
         recurrence_data = {'interval': interval}
 
@@ -190,6 +220,12 @@ class CreateChoreForm(forms.Form):
             cleaned['recurrence_pattern'] = 'custom'
 
         recurrence_data['interval_unit'] = frequency
+
+        if cleaned.get('assignment_type') == 'rotating':
+            rotation_pool = cleaned.get('rotation_users')
+            if not rotation_pool:
+                self.add_error('rotation_users', 'Select at least one user for rotation.')
+            recurrence_data['rotation_user_ids'] = list(rotation_pool.values_list('id', flat=True)) if rotation_pool else []
 
         if cleaned.get('months_of_year'):
             recurrence_data['months_of_year'] = cleaned['months_of_year']
