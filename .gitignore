@@ -7,23 +7,40 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.egg
+*.bak
 
 # Virtual Environment
 venv/
 env/
 ENV/
+.venv/
 
 # Django
 *.log
 db.sqlite3
 db.sqlite3-journal
+/db.sqlite3
+*.sqlite3
+*.sqlite3-journal
 /media
 /staticfiles
 /static
+local_settings.py
+settings_local.py
+celerybeat-schedule
+celerybeat.pid
 
 # Environment Variables
 .env
 .env.local
+
+# Node (if used for asset builds)
+node_modules/
+
+# Type checking / lint caches
+.mypy_cache/
+.ruff_cache/
 
 # IDE
 .vscode/

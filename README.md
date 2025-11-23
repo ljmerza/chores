@@ -199,6 +199,13 @@ Access the Django admin at `/admin/` to:
 
 Default superuser is created through the setup wizard.
 
+## Git Housekeeping
+
+If you previously committed files that are now ignored (e.g., `db.sqlite3`, `media/`, `staticfiles/`), remove them from the index before the next commit:
+```bash
+git rm --cached path/to/file
+```
+
 ## API (Coming Soon)
 
 REST API endpoints will be available at `/api/` including:

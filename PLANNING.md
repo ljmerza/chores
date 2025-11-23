@@ -554,6 +554,9 @@ StreakBonus:
    - WhiteNoise or cloud CDN
    - Media file storage (S3, etc.)
 
+3. **Networking**
+   - Keep database ports internal-only; services should communicate over the Docker network (no host port exposure).
+
 3. **Background Tasks**
    - Celery workers
    - Scheduled task processing
