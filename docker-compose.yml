@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: chores_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: choremanager
+      MYSQL_USER: choreuser
+      MYSQL_PASSWORD: chorepass123
+      MYSQL_ROOT_PASSWORD: rootpass123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  web:
+    build: .
+    container_name: chores_web
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "9478:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-docker-dev-key-change-in-production
+      - ALLOWED_HOSTS=*
+      - DATABASE_URL=mysql://choreuser:chorepass123@db:3306/choremanager
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=choremanager
+      - MYSQL_USER=choreuser
+      - MYSQL_PASSWORD=chorepass123
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for MySQL...' &&
+        sleep 5 &&
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+volumes:
+  mysql_data:
+  static_volume:
+  media_volume:
