@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Chore{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-6 md:p-10">
+            <div class="flex items-center justify-between flex-col md:flex-row gap-3 mb-6">
+                <div>
+                    <p class="text-sm uppercase text-primary tracking-widest font-semibold">Chore Builder</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Create a new chore</h1>
+                    <p class="text-gray-600 mt-1">Admins/owners can create chores. Global chores can be claimed by anyone.</p>
+                </div>
+                <a href="{% url 'home' %}?household={{ selected_household.id }}" class="text-primary font-semibold hover:underline">Back to dashboard</a>
+            </div>
+
+            {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    Please fix the errors below.
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                            Title <span class="text-red-600 text-xs font-normal">required</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                            Household <span class="text-red-600 text-xs font-normal">required</span>
+                        </label>
+                        {{ form.household }}
+                        {% if form.household.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.household.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-800 mb-1">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-xs text-red-500 mt-1">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                            Assignment Type <span class="text-red-600 text-xs font-normal">required</span>
+                        </label>
+                        {{ form.assignment_type }}
+                        {% if form.assignment_type.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.assignment_type.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">Assigned = choose user. Global = anyone can claim.</p>
+                    </div>
+                    <div id="assignee-wrapper">
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Assignee (for assigned)</label>
+                        {{ form.assigned_to }}
+                        {% if form.assigned_to.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.assigned_to.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Priority</label>
+                        {{ form.priority }}
+                        {% if form.priority.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.priority.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                            Points <span class="text-red-600 text-xs font-normal">required</span>
+                        </label>
+                        {{ form.base_points }}
+                        {% if form.base_points.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.base_points.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">
+                            Difficulty <span class="text-red-600 text-xs font-normal">required</span>
+                        </label>
+                        {{ form.difficulty }}
+                        {% if form.difficulty.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.difficulty.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-1">Due date (optional)</label>
+                        {{ form.due_date }}
+                        {% if form.due_date.errors %}
+                            <p class="text-xs text-red-500 mt-1">{{ form.due_date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-900">Recurrence</h3>
+                            <label class="inline-flex items-center space-x-2">
+                                {{ form.is_recurring }}
+                                <span class="text-sm text-gray-700">Recurring?</span>
+                            </label>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-800 mb-1">Frequency</label>
+                                {{ form.frequency }}
+                                {% if form.frequency.errors %}
+                                    <p class="text-xs text-red-500 mt-1">{{ form.frequency.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-800 mb-1">Repeat every</label>
+                                    {{ form.interval_value }}
+                                    {% if form.interval_value.errors %}
+                                        <p class="text-xs text-red-500 mt-1">{{ form.interval_value.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-700 mb-1">Interval unit</p>
+                                    <p id="interval-unit-label" class="text-sm font-semibold text-gray-900">weeks</p>
+                                    <p class="text-xs text-gray-500">Changes with frequency (days/weeks/months).</p>
+                                </div>
+                            </div>
+
+                            <div id="weekly-fields">
+                                <label class="block text-sm font-semibold text-gray-800 mb-1">Active days of week (optional)</label>
+                                {{ form.days_of_week }}
+                                {% if form.days_of_week.errors %}
+                                    <p class="text-xs text-red-500 mt-1">{{ form.days_of_week.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-1">Applies to any frequency; leave empty for all days.</p>
+                            </div>
+
+                            <div id="monthly-fields" class="space-y-2">
+                                <label class="block text-sm font-semibold text-gray-800 mb-1">Monthly options</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs text-gray-700 mb-1">Mode</label>
+                                        {{ form.monthly_mode }}
+                                        {% if form.monthly_mode.errors %}
+                                            <p class="text-xs text-red-500 mt-1">{{ form.monthly_mode.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div id="monthly-day-wrapper">
+                                        <label class="block text-xs text-gray-700 mb-1">Day of month</label>
+                                        {{ form.day_of_month }}
+                                        {% if form.day_of_month.errors %}
+                                            <p class="text-xs text-red-500 mt-1">{{ form.day_of_month.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="monthly-weekday-wrapper">
+                                    <div>
+        console.log('error');
+                                        <label class="block text-xs text-gray-700 mb-1">Week of month</label>
+                                        {{ form.week_of_month }}
+                                        {% if form.week_of_month.errors %}
+                                            <p class="text-xs text-red-500 mt-1">{{ form.week_of_month.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-700 mb-1">Weekday</label>
+                                        {{ form.weekday_of_month }}
+                                        {% if form.weekday_of_month.errors %}
+                                            <p class="text-xs text-red-500 mt-1">{{ form.weekday_of_month.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-800 mb-1">Active months (optional)</label>
+                                {{ form.months_of_year }}
+                                {% if form.months_of_year.errors %}
+                                    <p class="text-xs text-red-500 mt-1">{{ form.months_of_year.errors.0 }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-1">Limit to certain months (e.g., summer tasks).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-xl p-4 space-y-3">
+                        <h3 class="text-lg font-semibold text-gray-900">Verification</h3>
+                        <label class="inline-flex items-center space-x-2">
+                            {{ form.requires_verification }}
+                            <span class="text-sm text-gray-800">Requires verification</span>
+                        </label>
+                        <label class="inline-flex items-center space-x-2">
+                            {{ form.verification_photo_required }}
+                            <span class="text-sm text-gray-800">Photo required</span>
+                        </label>
+                        <p class="text-xs text-gray-500">Admins can approve completed chores when verification is on.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <a href="{% url 'home' %}?household={{ selected_household.id }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</a>
+                    <button type="submit" class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition">
+                        Create chore
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const isRecurring = document.getElementById("id_is_recurring");
+        const frequency = document.getElementById("id_frequency");
+        const weekly = document.getElementById("weekly-fields");
+        const monthly = document.getElementById("monthly-fields");
+        const months = document.getElementById("id_months_of_year");
+        const daysOfWeek = document.getElementById("id_days_of_week");
+        const dayOfMonth = document.getElementById("id_day_of_month");
+        const weekOfMonth = document.getElementById("id_week_of_month");
+        const weekdayOfMonth = document.getElementById("id_weekday_of_month");
+        const monthlyMode = document.getElementById("id_monthly_mode");
+        const intervalValue = document.getElementById("id_interval_value");
+        const intervalUnitLabel = document.getElementById("interval-unit-label");
+        const assignmentType = document.getElementById("id_assignment_type");
+        const assignee = document.getElementById("id_assigned_to");
+        const assigneeWrapper = document.getElementById("assignee-wrapper");
+
+        function setDisabled(el, disabled) {
+            if (!el) return;
+            if (el.tagName === 'SELECT' && el.multiple) {
+                [...el.options].forEach(opt => opt.disabled = disabled);
+            }
+            el.disabled = disabled;
+            if (disabled) {
+                el.closest('.grid')?.classList.add('opacity-50');
+            } else {
+                el.closest('.grid')?.classList.remove('opacity-50');
+            }
+        }
+
+        function updateVisibility() {
+            const recurringOn = isRecurring?.checked;
+            const assignVal = assignmentType?.value;
+            const freq = frequency?.value;
+            const mode = monthlyMode?.value || 'day';
+
+            const unitText = freq === 'daily' ? 'days' : freq === 'weekly' ? 'weeks' : 'months';
+            if (intervalUnitLabel) intervalUnitLabel.textContent = unitText;
+
+            if (!recurringOn) {
+                weekly.style.display = 'none';
+                monthly.style.display = 'none';
+                setDisabled(daysOfWeek, true);
+                setDisabled(dayOfMonth, true);
+                setDisabled(weekOfMonth, true);
+                setDisabled(weekdayOfMonth, true);
+                setDisabled(monthlyMode, true);
+                setDisabled(intervalValue, true);
+                setDisabled(months, true);
+            } else {
+                weekly.style.display = '';
+                monthly.style.display = freq === 'monthly' ? '' : 'none';
+
+                setDisabled(intervalValue, false);
+                setDisabled(months, false);
+                setDisabled(monthlyMode, freq !== 'monthly');
+                setDisabled(daysOfWeek, false);
+
+                const useDay = mode === 'day';
+                setDisabled(dayOfMonth, !(freq === 'monthly' && useDay));
+                setDisabled(weekOfMonth, !(freq === 'monthly' && !useDay));
+                setDisabled(weekdayOfMonth, !(freq === 'monthly' && !useDay));
+
+                const monthDayWrapper = document.getElementById('monthly-day-wrapper');
+                const monthWeekWrapper = document.getElementById('monthly-weekday-wrapper');
+                if (monthDayWrapper) monthDayWrapper.style.display = useDay ? '' : 'none';
+                if (monthWeekWrapper) monthWeekWrapper.style.display = useDay ? 'none' : '';
+            }
+
+            const assigned = assignVal === 'assigned';
+            assigneeWrapper.style.opacity = assigned ? '1' : '0.5';
+            setDisabled(assignee, !assigned);
+        }
+
+        isRecurring?.addEventListener('change', updateVisibility);
+        frequency?.addEventListener('change', updateVisibility);
+        monthlyMode?.addEventListener('change', updateVisibility);
+        assignmentType?.addEventListener('change', updateVisibility);
+        document.addEventListener('DOMContentLoaded', updateVisibility);
+        updateVisibility();
+    })();
+</script>
+{% endblock %}
