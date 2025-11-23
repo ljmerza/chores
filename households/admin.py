@@ -17,14 +17,14 @@ class HouseholdAdmin(admin.ModelAdmin):
 class HouseholdMembershipAdmin(admin.ModelAdmin):
     list_display = ['user', 'household', 'role', 'joined_at']
     list_filter = ['role', 'joined_at']
-    search_fields = ['user__username', 'household__name']
+    search_fields = ['user__email', 'household__name']
 
 
 @admin.register(UserScore)
 class UserScoreAdmin(admin.ModelAdmin):
     list_display = ['user', 'household', 'current_points', 'lifetime_points', 'current_streak', 'total_chores_completed']
     list_filter = ['household']
-    search_fields = ['user__username', 'household__name']
+    search_fields = ['user__email', 'household__name']
     readonly_fields = ['updated_at']
 
 
@@ -32,7 +32,7 @@ class UserScoreAdmin(admin.ModelAdmin):
 class PointTransactionAdmin(admin.ModelAdmin):
     list_display = ['user', 'household', 'transaction_type', 'amount', 'balance_after', 'created_at']
     list_filter = ['transaction_type', 'source_type', 'created_at']
-    search_fields = ['user__username', 'household__name', 'description']
+    search_fields = ['user__email', 'household__name', 'description']
     readonly_fields = ['created_at']
 
 
@@ -40,7 +40,7 @@ class PointTransactionAdmin(admin.ModelAdmin):
 class LeaderboardAdmin(admin.ModelAdmin):
     list_display = ['household', 'user', 'period', 'rank', 'points', 'chores_completed']
     list_filter = ['period', 'household']
-    search_fields = ['user__username', 'household__name']
+    search_fields = ['user__email', 'household__name']
 
 
 @admin.register(StreakBonus)

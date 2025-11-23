@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Setup - Add Household Accounts{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-screen py-12">
+    <div class="w-full max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-8 md:p-12">
+                <div class="flex items-start justify-between flex-col md:flex-row md:items-center mb-8">
+                    <div>
+                        <p class="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Step 2 of 2</p>
+                        <h1 class="text-4xl font-bold text-gray-800 leading-tight">Add Household Accounts</h1>
+                        <p class="text-gray-600 mt-2">Your owner account is ready. Add other owners or child accounts so everyone can log in.</p>
+                    </div>
+                    <a href="?skip=1" class="mt-4 md:mt-0 inline-flex items-center text-primary font-semibold hover:underline">
+                        Skip for now
+                    </a>
+                </div>
+
+                <div class="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-6 mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase text-gray-500 tracking-wider mb-1">Household</p>
+                            <h3 class="text-2xl font-bold text-gray-900">{{ household.name }}</h3>
+                            {% if household.description %}
+                                <p class="text-gray-600 mt-1">{{ household.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs uppercase text-gray-500 tracking-wider mb-1">Invite Code</p>
+                            <p class="text-lg font-mono font-semibold text-primary">{{ household.invite_code }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if formset.non_form_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                        {{ formset.non_form_errors }}
+                    </div>
+                {% endif %}
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    {{ formset.management_form }}
+
+                    <p class="text-gray-600 text-sm">Leave a row blank to skip it. Passwords are optional for now; you can set or update them later.</p>
+
+                    <div class="space-y-6">
+                        {% for form in formset %}
+                            <div class="border border-gray-200 rounded-xl p-6 shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-lg font-semibold text-gray-800">Account {{ forloop.counter }}</h4>
+                                    {% if form.non_field_errors %}
+                                        <p class="text-red-500 text-sm">{{ form.non_field_errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.first_name.id_for_label }}">First Name</label>
+                                        {{ form.first_name }}
+                                        {% if form.first_name.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                        {{ form.last_name }}
+                                        {% if form.last_name.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.email.id_for_label }}">Email (optional)</label>
+                                        {{ form.email }}
+                                        {% if form.email.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-400 mt-1">Add an email for owners; kids can be created without one.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.role.id_for_label }}">Role</label>
+                                        {{ form.role }}
+                                        {% if form.role.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.role.errors.0 }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-400 mt-1">Owners can manage settings; children have limited access.</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.password.id_for_label }}">Password (optional)</label>
+                                    {{ form.password }}
+                                    {% if form.password.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-xs text-gray-400 mt-1">If left blank, the account will be created with an unusable password until you set one.</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                        <a href="?skip=1" class="inline-flex justify-center items-center w-full border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                            Skip & Finish
+                        </a>
+                        <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                            Save Accounts & Finish Setup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

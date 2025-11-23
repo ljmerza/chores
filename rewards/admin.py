@@ -14,5 +14,5 @@ class RewardAdmin(admin.ModelAdmin):
 class RewardRedemptionAdmin(admin.ModelAdmin):
     list_display = ['user', 'reward', 'household', 'points_spent', 'status', 'created_at']
     list_filter = ['status', 'created_at']
-    search_fields = ['user__username', 'reward__title']
+    search_fields = ['user__email', 'reward__title']
     readonly_fields = ['created_at', 'approved_at', 'fulfilled_at']

@@ -8,7 +8,7 @@ from rewards.models import Reward
 
 class RewardModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@example.com", password="pass")
         self.household = Household.objects.create(name="Home", created_by=self.user)
 
     def test_quantity_remaining_defaults_to_available(self):

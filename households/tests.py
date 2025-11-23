@@ -9,7 +9,7 @@ from households.models import Household, UserScore
 
 class HouseholdModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@example.com", password="pass")
 
     def test_invite_code_regenerates_on_collision(self):
         """

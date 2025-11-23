@@ -18,6 +18,7 @@ A Django-based chore management system that gamifies household tasks through poi
   - Leaderboards (daily, weekly, monthly, all-time)
 - **Rewards**: Point-based reward redemption system
 - **Notifications**: Track chore assignments, transfers, and achievements
+- **Accounts**: Email-only accounts (no usernames)
 
 ## Technology Stack
 

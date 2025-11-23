@@ -89,7 +89,7 @@ class HouseholdMembership(models.Model):
         ordering = ['-joined_at']
 
     def __str__(self):
-        return f"{self.user.username} - {self.household.name} ({self.role})"
+        return f"{self.user} - {self.household.name} ({self.role})"
 
 
 class UserScore(models.Model):
@@ -142,7 +142,7 @@ class UserScore(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {self.household.name}: {self.current_points} pts"
+        return f"{self.user} - {self.household.name}: {self.current_points} pts"
 
 
 class PointTransaction(models.Model):
@@ -201,7 +201,7 @@ class PointTransaction(models.Model):
 
     def __str__(self):
         sign = '+' if self.amount >= 0 else ''
-        return f"{self.user.username}: {sign}{self.amount} pts ({self.transaction_type})"
+        return f"{self.user}: {sign}{self.amount} pts ({self.transaction_type})"
 
 
 class Leaderboard(models.Model):
@@ -244,7 +244,7 @@ class Leaderboard(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.household.name} - {self.period} - Rank {self.rank}: {self.user.username}"
+        return f"{self.household.name} - {self.period} - Rank {self.rank}: {self.user}"
 
 
 class StreakBonus(models.Model):

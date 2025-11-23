@@ -50,8 +50,7 @@ A Django-based chore management system that gamifies household tasks through poi
 ```python
 User:
     - id (PK)
-    - username
-    - email
+    - email (unique)
     - password
     - first_name
     - last_name

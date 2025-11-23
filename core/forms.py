@@ -1,18 +1,17 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from households.models import Household
 from .models import User
 
 TAILWIND_INPUT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200'
 TAILWIND_TEXTAREA_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 resize-none'
+TAILWIND_SELECT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 bg-white'
 
 
 class SetupWizardForm(forms.Form):
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Choose a username'})
-    )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'your@email.com'})
+        required=False,
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'your@email.com (optional)'})
     )
     first_name = forms.CharField(
         max_length=150,
@@ -42,16 +41,11 @@ class SetupWizardForm(forms.Form):
         })
     )
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if User.objects.filter(username=username).exists():
-            raise forms.ValidationError("This username is already taken.")
-        return username
-
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("This email is already registered.")
+        if email:
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError("This email is already registered.")
         return email
 
     def clean_password(self):
@@ -68,3 +62,117 @@ class SetupWizardForm(forms.Form):
             raise forms.ValidationError("Passwords do not match.")
 
         return cleaned_data
+
+
+class InviteSignupForm(forms.Form):
+    invite_code = forms.CharField(
+        max_length=8,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': '8-character code'})
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'your@email.com (optional)'})
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'First name'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Last name (optional)'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Create a password'})
+    )
+    password_confirm = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Confirm password'})
+    )
+
+    def clean_invite_code(self):
+        code = (self.cleaned_data.get('invite_code') or '').strip().upper()
+        if not code:
+            raise forms.ValidationError("Invite code is required.")
+        if not Household.objects.filter(invite_code=code).exists():
+            raise forms.ValidationError("Invalid invite code. Please check with your household admin.")
+        return code
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            if User.objects.filter(email=email).exists():
+                raise forms.ValidationError("This email is already registered.")
+        return email
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        validate_password(password)
+        return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError("Passwords do not match.")
+
+        return cleaned_data
+
+
+class AdditionalAccountForm(forms.Form):
+    ROLE_CHOICES = [
+        ('admin', 'Owner / Admin'),
+        ('member', 'Member'),
+        ('child', 'Child'),
+    ]
+
+    first_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'First name'})
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Last name (optional)'})
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Email (optional)'})
+    )
+    role = forms.ChoiceField(
+        choices=ROLE_CHOICES,
+        initial='member',
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
+    )
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Set a password (optional)'})
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError("This email is already registered.")
+        return email
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            validate_password(password)
+        return password
+
+    def is_blank(self):
+        """
+        Helper to skip entirely empty rows in the formset.
+        """
+        fields = ['first_name', 'last_name', 'email', 'password']
+        return all(not self.data.get(self.add_prefix(field)) for field in fields)
+
+
+AdditionalAccountFormSet = forms.formset_factory(
+    AdditionalAccountForm,
+    extra=3,
+    max_num=8,
+    validate_max=True
+)

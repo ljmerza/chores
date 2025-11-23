@@ -254,7 +254,7 @@ class ChoreTransfer(models.Model):
         ordering = ['-requested_at']
 
     def __str__(self):
-        return f"{self.chore_instance.chore.title}: {self.from_user.username} -> {self.to_user.username} ({self.status})"
+        return f"{self.chore_instance.chore.title}: {self.from_user} -> {self.to_user} ({self.status})"
 
 
 class Notification(models.Model):
@@ -297,4 +297,4 @@ class Notification(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user.username}: {self.title}"
+        return f"{self.user}: {self.title}"

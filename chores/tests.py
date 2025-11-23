@@ -10,7 +10,7 @@ from chores.models import Chore, ChoreInstance, Notification
 
 class ChoreModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@example.com", password="pass")
         self.household = Household.objects.create(name="Home", created_by=self.user)
 
     def test_base_points_must_be_non_negative(self):
@@ -28,7 +28,7 @@ class ChoreModelTests(TestCase):
 
 class ChoreCompletionServiceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@example.com", password="pass")
         self.household = Household.objects.create(name="Home", created_by=self.user)
         self.chore = Chore.objects.create(
             household=self.household,

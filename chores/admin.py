@@ -32,7 +32,7 @@ class ChoreInstanceAdmin(admin.ModelAdmin):
 class ChoreTransferAdmin(admin.ModelAdmin):
     list_display = ['chore_instance', 'from_user', 'to_user', 'status', 'requested_at']
     list_filter = ['status', 'requested_at']
-    search_fields = ['from_user__username', 'to_user__username', 'chore_instance__chore__title']
+    search_fields = ['from_user__email', 'to_user__email', 'chore_instance__chore__title']
     readonly_fields = ['requested_at', 'responded_at']
 
 
@@ -40,5 +40,5 @@ class ChoreTransferAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['user', 'household', 'notification_type', 'title', 'is_read', 'created_at']
     list_filter = ['notification_type', 'is_read', 'created_at']
-    search_fields = ['user__username', 'title', 'message']
+    search_fields = ['user__email', 'title', 'message']
     readonly_fields = ['created_at']

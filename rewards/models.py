@@ -144,4 +144,4 @@ class RewardRedemption(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user.username} - {self.reward.title} ({self.status})"
+        return f"{self.user} - {self.reward.title} ({self.status})"

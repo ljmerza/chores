@@ -18,11 +18,26 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from core.views import HomeView, SetupWizardView
+from core.views import (
+    HomeView,
+    InviteSignupView,
+    SetupWizardView,
+    SetupWizardMembersView,
+    claim_chore,
+    complete_chore,
+    redeem_reward
+)
+from chores.views import CreateChoreView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('setup/', SetupWizardView.as_view(), name='setup_wizard'),
+    path('setup/members/', SetupWizardMembersView.as_view(), name='setup_wizard_members'),
+    path('invite/', InviteSignupView.as_view(), name='invite_signup'),
+    path('chores/create/', CreateChoreView.as_view(), name='create_chore'),
+    path('chores/<int:pk>/claim/', claim_chore, name='claim_chore'),
+    path('chores/<int:pk>/complete/', complete_chore, name='complete_chore'),
+    path('rewards/<int:pk>/redeem/', redeem_reward, name='redeem_reward'),
     path('', HomeView.as_view(), name='home'),
 ]
 

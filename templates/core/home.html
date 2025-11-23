@@ -11,7 +11,7 @@
             </a>
             <div class="flex items-center space-x-4">
                 {% if user.is_authenticated %}
-                    <span class="text-gray-300">Welcome, {{ user.full_name }}!</span>
+                    <span class="text-gray-300">Hi, {{ user.full_name }}!</span>
                     <a href="/admin/" class="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                         Admin
                     </a>
@@ -27,50 +27,365 @@
 {% endblock %}
 
 {% block content %}
-<div class="py-12">
-    <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-8 md:p-12 text-center">
-                <h1 class="text-5xl font-bold text-gray-800 mb-6">Welcome to Chore Manager</h1>
-
-                {% if user.is_authenticated %}
-                    <p class="text-xl text-gray-600 mb-8">Manage your household chores with ease!</p>
-
-                    {% if households %}
-                        <h3 class="text-2xl font-semibold text-gray-800 mb-6">Your Households</h3>
-                        <div class="space-y-4 mb-8">
-                            {% for household in households %}
-                                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
-                                    <h5 class="text-xl font-bold text-gray-800">{{ household.name }}</h5>
-                                    <p class="text-gray-600 mt-2">
-                                        Invite Code: <span class="font-mono font-bold text-primary">{{ household.invite_code }}</span>
-                                    </p>
-                                    {% if household.description %}
-                                        <p class="text-gray-500 text-sm mt-2">{{ household.description }}</p>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-6 py-4 rounded-lg mb-8">
-                            <p>You're not a member of any household yet. Create one or join using an invite code!</p>
-                        </div>
-                    {% endif %}
-
-                    <div class="space-y-4">
-                        <a href="/admin/" class="block w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                            Go to Admin Panel
-                        </a>
-                        <p class="text-gray-500 text-sm">API and frontend coming soon!</p>
+<div class="py-10">
+    {% if not user.is_authenticated %}
+        <div class="max-w-3xl mx-auto text-center bg-white rounded-2xl shadow-xl p-10">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Chore Manager</h1>
+            <p class="text-gray-600 mb-6">Log in to see your chores, points, and rewards.</p>
+            <a href="/admin/" class="inline-block bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                Login
+            </a>
+        </div>
+    {% elif not households %}
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-10">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">No households yet</h1>
+            <p class="text-gray-600 mb-6">Create a household or join one with an invite code to get started.</p>
+            <a href="/admin/" class="inline-block bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                Go to Admin
+            </a>
+        </div>
+    {% else %}
+        <div class="max-w-6xl mx-auto space-y-8">
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm uppercase text-primary tracking-widest font-semibold">Dashboard</p>
+                        <h1 class="text-4xl font-bold text-gray-900">Hello, {{ user.full_name }}!</h1>
+                        <p class="text-gray-600 mt-1">
+                            {% if is_admin %}
+                                You're an owner/admin. You can manage the household and still earn points from chores.
+                            {% else %}
+                                Stay on top of your chores and rewards.
+                            {% endif %}
+                        </p>
                     </div>
-                {% else %}
-                    <p class="text-xl text-gray-600 mb-8">Please log in to get started</p>
-                    <a href="/admin/" class="inline-block bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 px-8 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                        Login
+                    <div class="flex flex-col sm:flex-row gap-3 items-stretch">
+                        <form method="get" class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
+                            <label for="household" class="text-sm text-gray-600 mr-2">Household</label>
+                            <select name="household" id="household" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
+                                {% for h in households %}
+                                    <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="ml-3 text-primary font-semibold hover:underline">Switch</button>
+                        </form>
+                        <div class="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg px-4 py-2">
+                            <div>
+                                <p class="text-xs uppercase text-gray-500 tracking-wider">Invite Code</p>
+                                <p class="text-lg font-mono font-semibold text-primary">{{ invite_code }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+                    <p class="text-sm text-gray-500">Current Points</p>
+                    <p class="text-4xl font-bold text-gray-900">{{ user_score.current_points|default:0 }}</p>
+                    <p class="text-xs text-gray-500">Lifetime: {{ user_score.lifetime_points|default:0 }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+                    <p class="text-sm text-gray-500">Streak</p>
+                    <p class="text-4xl font-bold text-gray-900">{{ user_score.current_streak|default:0 }} <span class="text-base text-gray-500">days</span></p>
+                    <p class="text-xs text-gray-500">Longest: {{ user_score.longest_streak|default:0 }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+                    <p class="text-sm text-gray-500">Chores</p>
+                    <p class="text-4xl font-bold text-gray-900">{{ summary_counts.active|default:0 }}</p>
+                    <p class="text-xs text-gray-500">Due today: {{ summary_counts.due_today|default:0 }} | Overdue: {{ summary_counts.overdue|default:0 }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+                    <p class="text-sm text-gray-500">Claimable</p>
+                    <p class="text-4xl font-bold text-gray-900">{{ summary_counts.claimable|default:0 }}</p>
+                    <p class="text-xs text-gray-500">Global chores anyone can take</p>
+                </div>
+            </div>
+
+            {% if is_admin %}
+            <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Owner/Admin shortcuts</h2>
+                    <span class="text-xs text-gray-500">Admins can do chores too — keep earning points.</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <a href="/admin/households/household/" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                        <span class="font-semibold text-gray-800">Manage household</span>
+                        <span class="text-primary text-xl">↗</span>
                     </a>
-                {% endif %}
+                    <a href="{% url 'create_chore' %}?household={{ selected_household.id }}" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                        <span class="font-semibold text-gray-800">Create chore</span>
+                        <span class="text-primary text-xl">+</span>
+                    </a>
+                    <a href="/admin/rewards/reward/add/" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                        <span class="font-semibold text-gray-800">Add reward</span>
+                        <span class="text-primary text-xl">★</span>
+                    </a>
+                    <a href="/admin/" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                        <span class="font-semibold text-gray-800">Admin panel</span>
+                        <span class="text-primary text-xl">↗</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-xl shadow border border-gray-100">
+                        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">My Chores</h2>
+                                <p class="text-sm text-gray-500">Admins/owners see their own chores here too.</p>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-6">
+                            <div>
+                                <h3 class="text-sm font-semibold text-red-600 uppercase tracking-wide mb-2">Overdue</h3>
+                                {% if overdue_chores %}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {% for chore in overdue_chores %}
+                                            <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="font-semibold text-gray-900">{{ chore.title }}</p>
+                                                    <span class="text-xs text-red-700 font-semibold">Overdue</span>
+                                                </div>
+                                        {% if chore.due_date %}
+                                            <p class="text-sm text-red-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
+                                        {% if is_admin %}
+                                            <a href="/admin/chores/chore/{{ chore.id }}/change/" class="text-xs text-primary font-semibold mt-2 inline-flex items-center">Admin edit ↗</a>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'complete_chore' chore.id %}?household={{ selected_household.id }}" class="mt-3">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs font-semibold text-white bg-red-600 px-3 py-1 rounded hover:bg-red-700 transition">
+                                                Mark complete
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-500">No overdue chores. Nice!</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Due today</h3>
+                                {% if due_today_chores %}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {% for chore in due_today_chores %}
+                                            <div class="border border-primary/20 bg-primary/5 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="font-semibold text-gray-900">{{ chore.title }}</p>
+                                                    <span class="text-xs text-primary font-semibold">Today</span>
+                                                </div>
+                                        {% if chore.due_date %}
+                                            <p class="text-sm text-gray-600 mt-1">Due {{ chore.due_date|date:"g:ia" }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
+                                        {% if is_admin %}
+                                            <a href="/admin/chores/chore/{{ chore.id }}/change/" class="text-xs text-primary font-semibold mt-2 inline-flex items-center">Admin edit ↗</a>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'complete_chore' chore.id %}?household={{ selected_household.id }}" class="mt-3">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs font-semibold text-white bg-primary px-3 py-1 rounded hover:bg-primary/80 transition">
+                                                Mark complete
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-500">No chores due today.</p>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-2">Upcoming</h3>
+                                {% if upcoming_chores %}
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {% for chore in upcoming_chores %}
+                                            <div class="border border-gray-200 bg-gray-50 rounded-lg p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="font-semibold text-gray-900">{{ chore.title }}</p>
+                                                    <span class="text-xs text-gray-600">{{ chore.get_priority_display }}</span>
+                                                </div>
+                                                {% if chore.due_date %}
+                                                    <p class="text-sm text-gray-600 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                            {% else %}
+                                                <p class="text-sm text-gray-600 mt-1">No due date</p>
+                                            {% endif %}
+                                            <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }}</p>
+                                            {% if is_admin %}
+                                                <a href="/admin/chores/chore/{{ chore.id }}/change/" class="text-xs text-primary font-semibold mt-2 inline-flex items-center">Admin edit ↗</a>
+                                            {% endif %}
+                                            <form method="post" action="{% url 'complete_chore' chore.id %}?household={{ selected_household.id }}" class="mt-3">
+                                                {% csrf_token %}
+                                                <button type="submit" class="text-xs font-semibold text-white bg-gray-800 px-3 py-1 rounded hover:bg-gray-900 transition">
+                                                    Mark complete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-gray-500">Nothing else scheduled yet.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow border border-gray-100">
+                        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Claimable chores</h2>
+                                <p class="text-sm text-gray-500">Global chores anyone can pick up.</p>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            {% if claimable_chores %}
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {% for chore in claimable_chores %}
+                                        <div class="border border-green-200 bg-green-50 rounded-lg p-4">
+                                            <div class="flex items-center justify-between">
+                                                <p class="font-semibold text-gray-900">{{ chore.title }}</p>
+                                                <span class="text-xs text-green-700 font-semibold">Available</span>
+                                            </div>
+                                        {% if chore.due_date %}
+                                            <p class="text-sm text-gray-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                        {% endif %}
+                                        <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Difficulty: {{ chore.get_difficulty_display }}</p>
+                                        {% if is_admin %}
+                                            <a href="/admin/chores/chore/{{ chore.id }}/change/" class="text-xs text-primary font-semibold mt-2 inline-flex items-center">Admin edit ↗</a>
+                                        {% endif %}
+                                        <form method="post" action="{% url 'claim_chore' chore.id %}?household={{ selected_household.id }}" class="mt-3">
+                                            {% csrf_token %}
+                                            <button type="submit" class="text-xs font-semibold text-white bg-green-600 px-3 py-1 rounded hover:bg-green-700 transition">
+                                                Claim chore
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-gray-500">No claimable chores right now.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl shadow border border-gray-100">
+                        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                            <h2 class="text-xl font-bold text-gray-900">Leaderboard</h2>
+                            {% if user_rank %}
+                                <span class="text-xs text-gray-600">Your rank: #{{ user_rank }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="p-5 space-y-3">
+                            {% if household_leaderboard %}
+                                {% for score in household_leaderboard %}
+                                    <div class="flex items-center justify-between border border-gray-100 rounded-lg px-3 py-2">
+                                        <div>
+                                            <p class="font-semibold text-gray-900">{{ score.user.full_name|default:score.user.email }}</p>
+                                            <p class="text-xs text-gray-500">Points: {{ score.current_points }}</p>
+                                        </div>
+                                        <span class="text-lg font-bold text-primary">#{{ forloop.counter }}</span>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-sm text-gray-500">No scores yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow border border-gray-100">
+                        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                            <h2 class="text-xl font-bold text-gray-900">Rewards</h2>
+                            {% if user_score %}
+                                <span class="text-xs text-gray-600">You have {{ user_score.current_points }} pts</span>
+                            {% endif %}
+                        </div>
+                        <div class="p-5 space-y-3">
+                            {% if affordable_rewards %}
+                                <p class="text-sm text-gray-600 font-semibold">You can afford</p>
+                                <div class="space-y-2">
+                                    {% for reward in affordable_rewards %}
+                                        <div class="flex items-center justify-between border border-green-200 bg-green-50 rounded-lg px-3 py-2">
+                                            <div>
+                                                <p class="font-semibold text-gray-900">{{ reward.title }}</p>
+                                                <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
+                                            </div>
+                                            <span class="text-sm font-bold text-green-700">{{ reward.point_cost }} pts</span>
+                                            {% if is_admin %}
+                                                <a href="/admin/rewards/reward/{{ reward.id }}/change/" class="text-[11px] text-primary font-semibold ml-2">Admin edit</a>
+                                            {% endif %}
+                                            <form method="post" action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}" class="ml-2">
+                                                {% csrf_token %}
+                                                <button type="submit" class="text-[11px] font-semibold text-white bg-green-700 px-2 py-1 rounded hover:bg-green-800 transition">
+                                                    Redeem
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            {% if available_rewards %}
+                                <p class="text-sm text-gray-600 font-semibold {% if affordable_rewards %}pt-3 border-t border-gray-100{% endif %}">All available</p>
+                                <div class="space-y-2">
+                                    {% for reward in available_rewards %}
+                                        <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+                                            <div>
+                                                <p class="font-semibold text-gray-900">{{ reward.title }}</p>
+                                                <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
+                                            </div>
+                                            <span class="text-sm font-bold text-gray-700">{{ reward.point_cost }} pts</span>
+                                            {% if is_admin %}
+                                                <a href="/admin/rewards/reward/{{ reward.id }}/change/" class="text-[11px] text-primary font-semibold ml-2">Admin edit</a>
+                                            {% endif %}
+                                            {% if user_score and user_score.current_points >= reward.point_cost %}
+                                                <form method="post" action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}" class="ml-2">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="text-[11px] font-semibold text-white bg-primary px-2 py-1 rounded hover:bg-primary/80 transition">
+                                                        Redeem
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-gray-500">No rewards yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow border border-gray-100">
+                        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                            <h2 class="text-xl font-bold text-gray-900">Notifications</h2>
+                        </div>
+                        <div class="p-5 space-y-3">
+                            {% if notifications %}
+                                {% for note in notifications %}
+                                    <div class="border border-blue-100 bg-blue-50 rounded-lg px-3 py-2">
+                                        <p class="font-semibold text-gray-900">{{ note.title }}</p>
+                                        <p class="text-xs text-gray-600 mt-1">{{ note.message }}</p>
+                                        <p class="text-[11px] text-gray-400 mt-1">{{ note.created_at|date:"M j, g:ia" }}</p>
+                                        {% if is_admin %}
+                                            <a href="/admin/chores/notification/{{ note.id }}/change/" class="text-[11px] text-primary font-semibold mt-1 inline-flex items-center">Admin view ↗</a>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-sm text-gray-500">No unread notifications.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
