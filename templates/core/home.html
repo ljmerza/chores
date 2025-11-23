@@ -175,6 +175,8 @@
                                     </div>
                                     {% if chore.due_date %}
                                     <p class="text-sm text-red-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-red-700 mt-1">Anytime</p>
                                     {% endif %}
                                     <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{
                                         chore.get_priority_display }}</p>
@@ -213,6 +215,8 @@
                                     </div>
                                     {% if chore.due_date %}
                                     <p class="text-sm text-gray-600 mt-1">Due {{ chore.due_date|date:"g:ia" }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-600 mt-1">Anytime</p>
                                     {% endif %}
                                     <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{
                                         chore.get_priority_display }}</p>
@@ -260,6 +264,8 @@
                                 </div>
                                 {% if chore.due_date %}
                                 <p class="text-sm text-gray-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                {% else %}
+                                <p class="text-sm text-gray-700 mt-1">Anytime</p>
                                 {% endif %}
                                 <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Difficulty: {{
                                     chore.get_difficulty_display }}</p>

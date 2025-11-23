@@ -76,6 +76,7 @@ class CreateChoreForm(forms.Form):
         initial='medium',
         widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
     )
+    anytime = forms.BooleanField(required=False)
     due_date = forms.DateTimeField(
         required=False,
         widget=forms.DateTimeInput(attrs={'class': TAILWIND_INPUT_CLASS, 'type': 'datetime-local'})
@@ -159,6 +160,7 @@ class CreateChoreForm(forms.Form):
             self.fields['base_points'].initial = instance.base_points
             self.fields['difficulty'].initial = instance.difficulty
             self.fields['due_date'].initial = instance.due_date
+            self.fields['anytime'].initial = instance.due_date is None and (instance.recurrence_pattern == 'none')
             self.fields['requires_verification'].initial = instance.requires_verification
             self.fields['verification_photo_required'].initial = instance.verification_photo_required
             self.fields['rotation_users'].initial = list(
@@ -192,6 +194,7 @@ class CreateChoreForm(forms.Form):
             weekday_map = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
             self.fields['days_of_week'].initial = [weekday_map[weekday_idx]]
             self.fields['day_of_month'].initial = today.day
+            self.fields['anytime'].initial = False
 
         # Add error styling if needed
         if self.errors:
@@ -211,6 +214,13 @@ class CreateChoreForm(forms.Form):
 
         if cleaned.get('due_date') and cleaned['due_date'] < timezone.now():
             self.add_error('due_date', 'Due date cannot be in the past.')
+
+        if cleaned.get('anytime'):
+            cleaned['due_date'] = None
+            cleaned['is_recurring'] = False
+            cleaned['recurrence_pattern'] = 'none'
+            cleaned['recurrence_data'] = {}
+            return cleaned
 
         is_recurring = cleaned.get('is_recurring')
         frequency = cleaned.get('frequency')

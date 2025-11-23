@@ -120,21 +120,27 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="border border-gray-200 rounded-xl p-4">
+                    <div class="border border-gray-200 rounded-xl p-4" id="recurrence-card">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="text-lg font-semibold text-gray-900">Recurrence</h3>
-                            <label class="inline-flex items-center space-x-2">
-                                {{ form.is_recurring }}
-                                <span class="text-sm text-gray-700">Recurring?</span>
-                            </label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <label class="inline-flex items-center space-x-2">
+                                    {{ form.anytime }}
+                                    <span class="text-sm text-gray-700">Anytime</span>
+                                </label>
+                                <label class="inline-flex items-center space-x-2">
+                                    {{ form.is_recurring }}
+                                    <span class="text-sm text-gray-700">Recurring?</span>
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="space-y-3">
+                        <div class="space-y-3" id="recurrence-fields">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-800 mb-1">Frequency</label>
                                 {{ form.frequency }}
                                 {% if form.frequency.errors %}
-                                <p class="text-xs text-red-500 mt-1">{{ form.frequency.errors.0 }}</p>
+                                    <p class="text-xs text-red-500 mt-1">{{ form.frequency.errors.0 }}</p>
                                 {% endif %}
                             </div>
 
@@ -273,6 +279,9 @@
         const pointsInput = document.getElementById("id_base_points");
         const difficultyInput = document.getElementById("id_difficulty");
         const pointsPreview = document.getElementById("points-preview");
+        const anytime = document.getElementById("id_anytime");
+        const dueDate = document.getElementById("id_due_date");
+        const recurrenceFields = document.getElementById("recurrence-fields");
 
         function setDisabled(el, disabled) {
             if (!el) return;
@@ -286,6 +295,7 @@
         }
 
         function describeRecurrence() {
+            if (anytime?.checked) return "Anytime chore (no due date / recurrence).";
             if (!isRecurring?.checked) return "One-time chore (no recurrence).";
 
             const freq = frequency?.value || 'weekly';
@@ -321,14 +331,41 @@
             return parts.join(' ');
         }
 
-        function updateVisibility() {
-            const recurringOn = isRecurring?.checked;
+        function updateVisibility(source) {
+            let isAnytimeChecked = anytime?.checked;
+            let isRecurringChecked = isRecurring?.checked;
+
+            if (source === 'anytime' && isAnytimeChecked && isRecurring) {
+                isRecurring.checked = false;
+                isRecurringChecked = false;
+            }
+            if (source === 'recurring' && isRecurringChecked && anytime) {
+                anytime.checked = false;
+                isAnytimeChecked = false;
+            }
+            if (anytime?.checked && isRecurring?.checked) {
+                isRecurring.checked = false;
+                isRecurringChecked = false;
+            }
+
+            const recurringOn = isRecurringChecked && !isAnytimeChecked;
             const assignVal = assignmentType?.value;
             const freq = frequency?.value;
             const mode = monthlyMode?.value || 'day';
 
             const unitText = freq === 'daily' ? 'days' : freq === 'weekly' ? 'weeks' : 'months';
             if (intervalUnitLabel) intervalUnitLabel.textContent = unitText;
+
+            if (isAnytimeChecked) {
+                if (dueDate) {
+                    dueDate.value = '';
+                    setDisabled(dueDate, true);
+                }
+            } else {
+                setDisabled(dueDate, false);
+            }
+
+            setDisabled(frequency, !recurringOn);
 
             if (!recurringOn) {
                 weekly.style.display = 'none';
@@ -340,6 +377,8 @@
                 setDisabled(monthlyMode, true);
                 setDisabled(intervalValue, true);
                 setDisabled(months, true);
+                recurrenceFields?.classList.add('opacity-50');
+                recurrenceFields?.classList.add('pointer-events-none');
             } else {
                 weekly.style.display = '';
                 monthly.style.display = freq === 'monthly' ? '' : 'none';
@@ -348,6 +387,8 @@
                 setDisabled(months, false);
                 setDisabled(monthlyMode, freq !== 'monthly');
                 setDisabled(daysOfWeek, false);
+                recurrenceFields?.classList.remove('opacity-50');
+                recurrenceFields?.classList.remove('pointer-events-none');
 
                 const useDay = mode === 'day';
                 setDisabled(dayOfMonth, !(freq === 'monthly' && useDay));
@@ -379,13 +420,14 @@
             }
         }
 
-        isRecurring?.addEventListener('change', updateVisibility);
+        isRecurring?.addEventListener('change', () => updateVisibility('recurring'));
         frequency?.addEventListener('change', updateVisibility);
         monthlyMode?.addEventListener('change', updateVisibility);
         assignmentType?.addEventListener('change', updateVisibility);
         pointsInput?.addEventListener('input', updateVisibility);
         difficultyInput?.addEventListener('change', updateVisibility);
         rotationUsers?.addEventListener('change', updateVisibility);
+        anytime?.addEventListener('change', () => updateVisibility('anytime'));
         months?.addEventListener('change', updateVisibility);
         daysOfWeek?.addEventListener('change', updateVisibility);
         dayOfMonth?.addEventListener('input', updateVisibility);
