@@ -399,6 +399,21 @@ StreakBonus:
    - Users can request custom rewards
    - Parents/admins can approve and set prices
 
+### Further Feature Opportunities
+- **Smart scheduling**: away/skip windows, seasonal/backlog sweeps, and load balancing that accounts for availability and skills.
+- **Motivation loops**: streak savers, weekly quests, surprise bonuses, and gentle social nudges/cheers.
+- **Fairness tools**: workload heatmap, debt/credit tracking for swaps, and a simple dispute/appeal flow with evidence.
+- **Verification & trust**: before/after photo or video checklists, lightweight approval queue, and an audit trail of edits/transfers.
+- **Reminders & automations**: multi-channel delivery with quiet hours, escalations, and templated checklists per chore.
+- **Rewards depth**: limited-time offers, bundles, per-user limits, and exportable coupons/gift cards.
+- **Household controls**: granular roles/permissions, guest/babysitter access, and household "away" calendars that pause/redistribute chores.
+- **Kid-friendly mode**: simplified UI with pictograms, timers/"beat the clock," and allowance tie-ins.
+- **Health & safety**: safety-check templates (smoke detectors, meds), supply tracking with reorder reminders, and room-specific checklists.
+- **Integrations**: calendar sync (iCal/Google), smart home triggers, shared grocery/expense lists, and chat hooks (Slack/Discord/WhatsApp).
+- **Insights**: streak/fairness dashboards, overdue heatmaps, and suggestions to rebalance or simplify routines.
+- **Detailed views**: rich charts/graphs for household and personal trends with drilldowns by category, time, and assignment type.
+- **Low-friction UX**: kiosk/tablet mode, QR codes per room/item for quick claims, and SMS-in commands for households without smartphones.
+
 ---
 
 ## Technology Stack
