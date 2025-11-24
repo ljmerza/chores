@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import F, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.generic import TemplateView
@@ -176,3 +177,101 @@ class EditChoreView(LoginRequiredMixin, TemplateView):
             'edit_mode': True,
             'chore': chore,
         })
+
+
+class ManageChoresView(LoginRequiredMixin, TemplateView):
+    template_name = 'chores/manage.html'
+    login_url = '/admin/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.households = self._household_queryset()
+
+        if not self.households.exists():
+            messages.error(request, "Join or create a household to manage chores.")
+            return redirect('home')
+
+        self.selected_household = self._selected_household()
+        if not self.selected_household:
+            messages.error(request, "Select a household to manage chores.")
+            return redirect('home')
+
+        if not self._is_admin(request.user, self.selected_household):
+            messages.error(request, "You need to be an admin to manage chores.")
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def _household_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Household.objects.all()
+        return Household.objects.filter(memberships__user=user).distinct()
+
+    def _selected_household(self):
+        requested = self.request.GET.get('household')
+        if requested:
+            return self.households.filter(id=requested).first()
+        return self.households.first()
+
+    def _is_admin(self, user, household):
+        return (
+            HouseholdMembership.objects.filter(
+                household=household,
+                user=user,
+                role='admin'
+            ).exists()
+            or user.is_staff
+            or user.role == 'admin'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        selected = self.selected_household
+
+        status_filter = self.request.GET.get('status') or 'all'
+        assignment_filter = self.request.GET.get('assignment') or 'all'
+        search_query = (self.request.GET.get('q') or '').strip()
+
+        chores_qs = Chore.objects.filter(household=selected).select_related('assigned_to', 'created_by')
+
+        if status_filter != 'all':
+            chores_qs = chores_qs.filter(status=status_filter)
+
+        if assignment_filter != 'all':
+            chores_qs = chores_qs.filter(assignment_type=assignment_filter)
+
+        if search_query:
+            chores_qs = chores_qs.filter(
+                Q(title__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(assigned_to__first_name__icontains=search_query)
+                | Q(assigned_to__last_name__icontains=search_query)
+                | Q(assigned_to__email__icontains=search_query)
+            )
+
+        chores_qs = chores_qs.order_by(
+            'status',
+            F('due_date').asc(nulls_last=True),
+            '-priority',
+            '-created_at'
+        )
+
+        base_qs = Chore.objects.filter(household=selected)
+
+        context.update({
+            'households': self.households,
+            'selected_household': selected,
+            'chores': chores_qs,
+            'status_filter': status_filter,
+            'assignment_filter': assignment_filter,
+            'search_query': search_query,
+            'counts': {
+                'total': base_qs.count(),
+                'pending': base_qs.filter(status='pending').count(),
+                'in_progress': base_qs.filter(status='in_progress').count(),
+                'completed': base_qs.filter(status='completed').count(),
+                'verified': base_qs.filter(status='verified').count(),
+            },
+            'visible_count': chores_qs.count(),
+        })
+        return context

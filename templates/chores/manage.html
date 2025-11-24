@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Chores{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-6xl mx-auto space-y-6">
+        {% if messages %}
+        <div>
+            {% include 'components/messages.html' %}
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase font-semibold text-primary tracking-wider">Chores</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Manage {{ selected_household.name }}</h1>
+                    <p class="text-gray-600 mt-1">Review every chore in this household, filter quickly, and jump into edits.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
+                        <label for="household" class="text-sm text-gray-600">Household</label>
+                        <select name="household" id="household" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
+                            {% for h in households %}
+                                <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                        {% if assignment_filter %}<input type="hidden" name="assignment" value="{{ assignment_filter }}">{% endif %}
+                        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+                        <button type="submit" class="ml-2 text-primary font-semibold text-sm hover:underline">Switch</button>
+                    </form>
+                    {% url 'create_chore' as create_chore_url %}
+                    {% if selected_household %}
+                        {% with household_id=selected_household.id|stringformat:"s" %}
+                            {% with create_href=create_chore_url|add:"?household="|add:household_id %}
+                                {% include 'components/button.html' with href=create_href label="Create chore" size="sm" %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        {% include 'components/button.html' with href=create_chore_url label="Create chore" size="sm" %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {% include 'components/stat_tile.html' with label="Total chores" value=counts.total helper="All chores in this household" tone="primary" %}
+            {% include 'components/stat_tile.html' with label="Pending" value=counts.pending helper="Not started" tone="danger" %}
+            {% include 'components/stat_tile.html' with label="In progress" value=counts.in_progress helper="Currently being worked" tone="primary" %}
+            {% with done_total=counts.completed|add:counts.verified %}
+                {% include 'components/stat_tile.html' with label="Completed" value=done_total helper="Completed or verified" tone="success" %}
+            {% endwith %}
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100">
+            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Chore list</h2>
+                    <p class="text-sm text-gray-500">Showing {{ visible_count }} of {{ counts.total }} chores</p>
+                </div>
+                {% url 'manage_chores' as manage_url %}
+                <form method="get" class="flex flex-col lg:flex-row lg:items-center gap-3 w-full lg:w-auto">
+                    {% if selected_household %}
+                        <input type="hidden" name="household" value="{{ selected_household.id }}">
+                    {% endif %}
+                    <div class="flex-1 min-w-[220px]">
+                        <label for="search" class="sr-only">Search</label>
+                        <input type="text" id="search" name="q" value="{{ search_query }}" placeholder="Search by title, description, or assignee"
+                               class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <select name="status" class="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent min-w-[140px]">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All statuses</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In progress</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified</option>
+                        </select>
+                        <select name="assignment" class="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent min-w-[140px]">
+                            <option value="all" {% if assignment_filter == 'all' %}selected{% endif %}>All types</option>
+                            <option value="assigned" {% if assignment_filter == 'assigned' %}selected{% endif %}>Assigned</option>
+                            <option value="global" {% if assignment_filter == 'global' %}selected{% endif %}>Global (anyone)</option>
+                            <option value="rotating" {% if assignment_filter == 'rotating' %}selected{% endif %}>Rotating</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        {% include 'components/button.html' with type="submit" label="Filter" size="sm" %}
+                        {% if selected_household %}
+                            {% with household_id=selected_household.id|stringformat:"s" %}
+                                {% with reset_href=manage_url|add:"?household="|add:household_id %}
+                                    {% include 'components/button.html' with href=reset_href label="Reset" variant="secondary" size="sm" %}
+                                {% endwith %}
+                            {% endwith %}
+                        {% else %}
+                            {% include 'components/button.html' with href=manage_url label="Reset" variant="secondary" size="sm" %}
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-100">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Chore</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Assignee</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Due</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Points</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for chore in chores %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4 align-top">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <p class="font-semibold text-gray-900">{{ chore.title }}</p>
+                                        {% if chore.assignment_type == 'assigned' %}
+                                            {% include 'components/badge.html' with text="Assigned" variant="primary" %}
+                                        {% elif chore.assignment_type == 'global' %}
+                                            {% include 'components/badge.html' with text="Global" variant="success" %}
+                                        {% else %}
+                                            {% include 'components/badge.html' with text="Rotating" variant="warning" %}
+                                        {% endif %}
+                                        {% if chore.requires_verification %}
+                                            {% include 'components/badge.html' with text="Verification" variant="info" %}
+                                        {% endif %}
+                                    </div>
+                                    {% if chore.description %}
+                                        <p class="text-sm text-gray-600">{{ chore.description|truncatechars:110 }}</p>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-800">
+                                {% if chore.status == 'pending' %}
+                                    {% include 'components/badge.html' with text=chore.get_status_display variant="warning" %}
+                                {% elif chore.status == 'in_progress' %}
+                                    {% include 'components/badge.html' with text=chore.get_status_display variant="primary" %}
+                                {% elif chore.status == 'completed' %}
+                                    {% include 'components/badge.html' with text=chore.get_status_display variant="success" %}
+                                {% elif chore.status == 'verified' %}
+                                    {% include 'components/badge.html' with text=chore.get_status_display variant="success" %}
+                                {% else %}
+                                    {% include 'components/badge.html' with text=chore.get_status_display variant="muted" %}
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-800">
+                                {% if chore.assigned_to %}
+                                    {{ chore.assigned_to.full_name|default:chore.assigned_to.email|default:"User" }}
+                                {% elif chore.assignment_type == 'rotating' %}
+                                    Rotation pool
+                                {% else %}
+                                    Anyone
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-800">
+                                {% if chore.due_date %}
+                                    {{ chore.due_date|date:"M j, g:ia" }}
+                                {% else %}
+                                    Anytime
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-800">
+                                <div class="font-semibold text-gray-900">{{ chore.base_points }} pts</div>
+                                <p class="text-xs text-gray-500">Priority: {{ chore.get_priority_display }}</p>
+                            </td>
+                            <td class="px-4 py-4 text-right text-sm">
+                                {% url 'edit_chore' chore.id as edit_url %}
+                                {% if selected_household %}
+                                    {% with household_id=selected_household.id|stringformat:"s" %}
+                                        {% with edit_href=edit_url|add:"?household="|add:household_id %}
+                                            {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% else %}
+                                    {% include 'components/button.html' with href=edit_url label="Edit" variant="secondary" size="sm" %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">No chores match these filters.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

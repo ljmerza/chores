@@ -89,11 +89,16 @@
                 <h2 class="text-xl font-bold text-gray-900">Owner/Admin shortcuts</h2>
                 <span class="text-xs text-gray-500">Admins can do chores too — keep earning points.</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <a href="{% url 'manage_household' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
                     <span class="font-semibold text-gray-800">Manage household</span>
                     <span class="text-primary text-xl">↗</span>
+                </a>
+                <a href="{% url 'manage_chores' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <span class="font-semibold text-gray-800">Manage chores</span>
+                    <span class="text-primary text-xl">✔</span>
                 </a>
                 <a href="{% url 'create_chore' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
@@ -136,8 +141,7 @@
                                 {% else %}
                                 <p class="text-sm text-red-700 mt-1">Anytime</p>
                                     {% endif %}
-                                    <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{
-                                        chore.get_priority_display }}</p>
+                                    <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
                                     {% if is_admin %}
                                     <div class="flex gap-2 mt-2">
                                         <a href="{% url 'edit_chore' chore.id %}?household={{ selected_household.id }}"
@@ -173,8 +177,7 @@
                                 {% else %}
                                 <p class="text-sm text-gray-600 mt-1">Anytime</p>
                                     {% endif %}
-                                    <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{
-                                        chore.get_priority_display }}</p>
+                                    <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
                                     {% if is_admin %}
                                     <div class="flex gap-2 mt-2">
                                         <a href="{% url 'edit_chore' chore.id %}?household={{ selected_household.id }}"
