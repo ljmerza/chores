@@ -66,6 +66,7 @@ A Django-based chore management system that gamifies household tasks through poi
 
 Run this after the containers are up to load a fake household with admins, members, kids, chores, and rewards. It will not run automatically.
 
+- Helper script: `./scripts/seed_demo_data.sh [--force]`
 - Docker Compose: `docker-compose exec web python manage.py seed_demo_data`
 - Local (SQLite/MySQL): `python manage.py seed_demo_data`
 - Recreate the demo household if it already exists: add `--force`
