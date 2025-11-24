@@ -58,10 +58,43 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS(f"Household invite code: {household.invite_code}"))
         self.stdout.write(self.style.SUCCESS(f"User password for all demo accounts: {DEFAULT_PASSWORD}"))
+        self._print_user_credentials(users)
 
     # User and household helpers -------------------------------------------------
     def _create_users(self):
-        user_definitions = [
+        user_definitions = self._user_definitions()
+
+        users = {}
+        for definition in user_definitions:
+            defaults = {
+                "first_name": definition["first_name"],
+                "last_name": definition["last_name"],
+                "role": definition["role"],
+                "is_staff": definition.get("is_staff", False),
+                "is_superuser": definition.get("is_superuser", False),
+            }
+            user, created = User.objects.get_or_create(
+                email=definition["email"],
+                defaults=defaults,
+            )
+            if created:
+                user.set_password(DEFAULT_PASSWORD)
+                user.save()
+            else:
+                updates = []
+                for field, value in defaults.items():
+                    if getattr(user, field) != value:
+                        setattr(user, field, value)
+                        updates.append(field)
+                if updates:
+                    user.save(update_fields=updates)
+
+            users[definition["key"]] = user
+
+        return users
+
+    def _user_definitions(self):
+        return [
             {
                 "key": "admin_one",
                 "email": "alex.admin@example.com",
@@ -110,34 +143,11 @@ class Command(BaseCommand):
             },
         ]
 
-        users = {}
-        for definition in user_definitions:
-            defaults = {
-                "first_name": definition["first_name"],
-                "last_name": definition["last_name"],
-                "role": definition["role"],
-                "is_staff": definition.get("is_staff", False),
-                "is_superuser": definition.get("is_superuser", False),
-            }
-            user, created = User.objects.get_or_create(
-                email=definition["email"],
-                defaults=defaults,
-            )
-            if created:
-                user.set_password(DEFAULT_PASSWORD)
-                user.save()
-            else:
-                updates = []
-                for field, value in defaults.items():
-                    if getattr(user, field) != value:
-                        setattr(user, field, value)
-                        updates.append(field)
-                if updates:
-                    user.save(update_fields=updates)
-
-            users[definition["key"]] = user
-
-        return users
+    def _print_user_credentials(self, users):
+        self.stdout.write("Demo users (email / role):")
+        for definition in self._user_definitions():
+            user = users[definition["key"]]
+            self.stdout.write(f"  - {user.email}  ({user.role})")
 
     def _create_household(self, created_by):
         household = Household.objects.create(
