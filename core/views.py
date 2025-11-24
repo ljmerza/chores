@@ -1,16 +1,19 @@
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from .models import User
 from households.models import Household, HouseholdMembership, UserScore
 from chores.models import Chore, Notification
-from rewards.models import Reward, RewardRedemption
+from rewards.models import Reward
+from rewards.services import request_redemption, RewardError
 from .forms import InviteSignupForm, SetupWizardForm, AdditionalAccountFormSet
 
 
@@ -258,7 +261,9 @@ class HomeView(TemplateView):
             reward for reward in Reward.objects.filter(
                 household=selected_household,
                 is_active=True
-            ).order_by('point_cost')
+            ).filter(
+                Q(allowed_members__isnull=True) | Q(allowed_members=user)
+            ).distinct().order_by('point_cost')
             if reward.is_available
         ]
 
@@ -402,26 +407,15 @@ def redeem_reward(request, pk):
     if not _ensure_membership(request.user, reward.household):
         return redirect('home')
 
-    score = UserScore.objects.filter(user=request.user, household=reward.household).first()
-    if not score:
-        home_url = reverse('home')
-        return redirect(f"{home_url}?household={reward.household.id}")
-
-    if request.method == 'POST' and reward.is_available and score.current_points >= reward.point_cost:
-        with transaction.atomic():
-            RewardRedemption.objects.create(
-                reward=reward,
-                user=request.user,
-                household=reward.household,
-                points_spent=reward.point_cost,
-                status='pending'
-            )
-            score.current_points -= reward.point_cost
-            score.save(update_fields=['current_points', 'updated_at'])
-
-            if reward.quantity_remaining is not None and reward.quantity_remaining > 0:
-                reward.quantity_remaining -= 1
-                reward.save(update_fields=['quantity_remaining', 'updated_at'])
+    if request.method == 'POST':
+        try:
+            redemption = request_redemption(request.user, reward, reward.household)
+            if redemption.status == 'approved':
+                messages.success(request, f'Reward "{reward.title}" redeemed.')
+            else:
+                messages.success(request, f'Reward "{reward.title}" requested. Awaiting approval.')
+        except RewardError as exc:
+            messages.error(request, str(exc))
 
     home_url = reverse('home')
     return redirect(f"{home_url}?household={reward.household.id}")

@@ -29,6 +29,7 @@ from core.views import (
 )
 from chores.views import CreateChoreView, EditChoreView
 from households.views import ManageHouseholdView
+from rewards.views import CreateRewardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -41,6 +42,7 @@ urlpatterns = [
     path('chores/<int:pk>/claim/', claim_chore, name='claim_chore'),
     path('chores/<int:pk>/complete/', complete_chore, name='complete_chore'),
     path('rewards/<int:pk>/redeem/', redeem_reward, name='redeem_reward'),
+    path('rewards/create/', CreateRewardView.as_view(), name='create_reward'),
     path('', HomeView.as_view(), name='home'),
 ]
 
