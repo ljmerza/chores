@@ -1,0 +1,22 @@
+<div class="space-y-1 {{ wrapper_classes }}">
+    {% if label %}
+        <label{% if for_id %} for="{{ for_id }}"{% endif %} class="block text-sm font-semibold text-gray-800">
+            {{ label }}
+            {% if required %}
+                <span class="text-red-600 text-xs font-normal ml-1">{{ required_text|default:'required' }}</span>
+            {% endif %}
+            {% if label_hint %}
+                <span class="text-xs text-gray-500 font-normal ml-2">{{ label_hint }}</span>
+            {% endif %}
+        </label>
+    {% endif %}
+    <div class="mt-1">
+        {{ field }}
+    </div>
+    {% if help_text %}
+        <p class="text-xs text-gray-500">{{ help_text }}</p>
+    {% endif %}
+    {% if errors %}
+        <p class="text-xs text-red-500 mt-1">{% firstof errors.0 errors %}</p>
+    {% endif %}
+</div>

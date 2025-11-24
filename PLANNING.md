@@ -5,6 +5,21 @@ A Django-based chore management system that gamifies household tasks through poi
 
 ---
 
+## Shared Template Components
+- Location: `templates/components/`
+- `button.html`: props `label`, `href` or `type`, `variant` (`primary`, `secondary`, `success`, `danger`, `subtle`, `ghost`), `size` (`sm`, `md`, `lg`), `block` (full width), optional `icon`/`extra_classes`.
+- `badge.html`: pill for statuses; `variant` (`primary`, `success`, `danger`, `warning`, `info`, `muted`), `text`.
+- `alert.html`: inline notice; `variant` (`success`, `error`, `warning`, `info`), `message`, optional `title`.
+- `stat_tile.html`: dashboard metric; `label`, `value`, `helper`, `tone` (`gray`, `primary`, `success`, `danger`).
+- `section_header.html`: section title/subtitle with optional `action_label` + `action_href` (uses button component) or custom `action_content`.
+- `empty_state.html`: neutral card with `title`, `description`, optional `icon` and CTA (`action_label`, `action_href`, `action_variant`).
+- `navbar.html`: shared top nav used on home; shows app name and login/admin link based on `user`.
+- `card.html`: generic surface with optional `title/subtitle/header_right`; body via `body`/`content`; accepts extra `classes`/`body_class`.
+- `messages.html`: loops Django `messages` and renders them via `alert` component.
+- `form_field.html`: label + widget + help + error helper; props `label`, `field`, `errors`, optional `help_text`, `for_id`, `required`, `required_text`, `label_hint`, `wrapper_classes`.
+
+---
+
 ## Core Features
 
 ### 1. User Management

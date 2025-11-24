@@ -15,9 +15,11 @@
                 </div>
 
                 {% if form.errors %}
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                        <strong>Please correct the errors below:</strong>
-                        {{ form.non_field_errors }}
+                    <div class="mb-6 space-y-2">
+                        {% include 'components/alert.html' with variant="error" message="Please correct the errors below." %}
+                        {% if form.non_field_errors %}
+                            <p class="text-sm text-red-700">{{ form.non_field_errors }}</p>
+                        {% endif %}
                     </div>
                 {% endif %}
 
@@ -27,73 +29,28 @@
                     <div class="space-y-4">
                         <h5 class="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Owner Account</h5>
 
-                        <div>
-                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                                <p class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</p>
-                            {% endif %}
-                            <p class="text-xs text-gray-400 mt-1">You can add an email later in profile settings.</p>
+                        {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="You can add an email later in profile settings." wrapper_classes="text-sm" %}
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% include 'components/form_field.html' with label="First Name" field=form.first_name errors=form.first_name.errors for_id=form.first_name.id_for_label wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="Last Name" field=form.last_name errors=form.last_name.errors for_id=form.last_name.id_for_label wrapper_classes="text-sm" %}
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                {{ form.first_name }}
-                                {% if form.first_name.errors %}
-                                    <p class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                {{ form.last_name }}
-                                {% if form.last_name.errors %}
-                                    <p class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                {{ form.password }}
-                                {% if form.password.errors %}
-                                    <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <label for="{{ form.password_confirm.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                                {{ form.password_confirm }}
-                                {% if form.password_confirm.errors %}
-                                    <p class="text-red-500 text-sm mt-1">{{ form.password_confirm.errors.0 }}</p>
-                                {% endif %}
-                            </div>
+                            {% include 'components/form_field.html' with label="Password" field=form.password errors=form.password.errors for_id=form.password.id_for_label wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="Confirm Password" field=form.password_confirm errors=form.password_confirm.errors for_id=form.password_confirm.id_for_label wrapper_classes="text-sm" %}
                         </div>
                     </div>
 
                     <div class="space-y-4">
                         <h5 class="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">Your Household</h5>
 
-                        <div>
-                            <label for="{{ form.household_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Household Name</label>
-                            {{ form.household_name }}
-                            {% if form.household_name.errors %}
-                                <p class="text-red-500 text-sm mt-1">{{ form.household_name.errors.0 }}</p>
-                            {% endif %}
-                        </div>
+                        {% include 'components/form_field.html' with label="Household Name" field=form.household_name errors=form.household_name.errors for_id=form.household_name.id_for_label wrapper_classes="text-sm" %}
 
-                        <div>
-                            <label for="{{ form.household_description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
-                            {{ form.household_description }}
-                            {% if form.household_description.errors %}
-                                <p class="text-red-500 text-sm mt-1">{{ form.household_description.errors.0 }}</p>
-                            {% endif %}
-                        </div>
+                        {% include 'components/form_field.html' with label="Description (Optional)" field=form.household_description errors=form.household_description.errors for_id=form.household_description.id_for_label wrapper_classes="text-sm" %}
                     </div>
 
-                    <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                        Continue to Add Accounts
-                    </button>
+                    {% include 'components/button.html' with type="submit" label="Continue to Add Accounts" variant="primary" size="lg" block=True %}
                 </form>
             </div>
         </div>

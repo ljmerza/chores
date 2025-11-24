@@ -35,8 +35,8 @@
                 </div>
 
                 {% if formset.non_form_errors %}
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                        {{ formset.non_form_errors }}
+                    <div class="mb-6">
+                        {% include 'components/alert.html' with variant="error" message=formset.non_form_errors %}
                     </div>
                 {% endif %}
 
@@ -57,60 +57,23 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.first_name.id_for_label }}">First Name</label>
-                                        {{ form.first_name }}
-                                        {% if form.first_name.errors %}
-                                            <p class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.last_name.id_for_label }}">Last Name</label>
-                                        {{ form.last_name }}
-                                        {% if form.last_name.errors %}
-                                            <p class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
-                                        {% endif %}
-                                    </div>
+                                    {% include 'components/form_field.html' with label="First Name" field=form.first_name errors=form.first_name.errors for_id=form.first_name.id_for_label wrapper_classes="text-sm" %}
+                                    {% include 'components/form_field.html' with label="Last Name" field=form.last_name errors=form.last_name.errors for_id=form.last_name.id_for_label wrapper_classes="text-sm" %}
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.email.id_for_label }}">Email (optional)</label>
-                                        {{ form.email }}
-                                        {% if form.email.errors %}
-                                            <p class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</p>
-                                        {% endif %}
-                                        <p class="text-xs text-gray-400 mt-1">Add an email for owners; kids can be created without one.</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.role.id_for_label }}">Role</label>
-                                        {{ form.role }}
-                                        {% if form.role.errors %}
-                                            <p class="text-red-500 text-sm mt-1">{{ form.role.errors.0 }}</p>
-                                        {% endif %}
-                                        <p class="text-xs text-gray-400 mt-1">Owners can manage settings; children have limited access.</p>
-                                    </div>
+                                    {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Add an email for owners; kids can be created without one." wrapper_classes="text-sm" %}
+                                    {% include 'components/form_field.html' with label="Role" field=form.role errors=form.role.errors for_id=form.role.id_for_label help_text="Owners can manage settings; children have limited access." wrapper_classes="text-sm" %}
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1" for="{{ form.password.id_for_label }}">Password (optional)</label>
-                                    {{ form.password }}
-                                    {% if form.password.errors %}
-                                        <p class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</p>
-                                    {% endif %}
-                                    <p class="text-xs text-gray-400 mt-1">If left blank, the account will be created with an unusable password until you set one.</p>
-                                </div>
+                                {% include 'components/form_field.html' with label="Password (optional)" field=form.password errors=form.password.errors for_id=form.password.id_for_label help_text="If left blank, the account will be created with an unusable password until you set one." wrapper_classes="text-sm" %}
                             </div>
                         {% endfor %}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                        <a href="?skip=1" class="inline-flex justify-center items-center w-full border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition-all duration-200">
-                            Skip & Finish
-                        </a>
-                        <button type="submit" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                            Save Accounts & Finish Setup
-                        </button>
+                        {% include 'components/button.html' with href="?skip=1" label="Skip & Finish" variant="secondary" size="md" block=True %}
+                        {% include 'components/button.html' with type="submit" label="Save Accounts & Finish Setup" variant="primary" size="lg" block=True %}
                     </div>
                 </form>
             </div>

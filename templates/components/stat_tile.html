@@ -1,0 +1,14 @@
+{% with tone=tone|default:'gray' %}
+    <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+        <p class="text-sm text-gray-500">{{ label }}</p>
+        <p class="text-4xl font-bold
+            {% if tone == 'primary' %} text-primary
+            {% elif tone == 'success' %} text-green-700
+            {% elif tone == 'danger' %} text-red-700
+            {% else %} text-gray-900
+            {% endif %}">{{ value }}</p>
+        {% if helper %}
+            <p class="text-xs text-gray-500">{{ helper }}</p>
+        {% endif %}
+    </div>
+{% endwith %}

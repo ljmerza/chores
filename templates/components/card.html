@@ -1,0 +1,14 @@
+<div class="bg-white rounded-xl shadow border border-gray-100 {{ classes }}">
+    {% if title or subtitle or header_right %}
+        <div class="flex items-center justify-between p-5 border-b border-gray-100">
+            <div>
+                {% if title %}<h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>{% endif %}
+                {% if subtitle %}<p class="text-sm text-gray-500">{{ subtitle }}</p>{% endif %}
+            </div>
+            {% if header_right %}{{ header_right }}{% endif %}
+        </div>
+    {% endif %}
+    <div class="{{ body_class|default:'p-5 space-y-3' }}">
+        {{ body|default:content }}
+    </div>
+</div>

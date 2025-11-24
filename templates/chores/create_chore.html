@@ -19,8 +19,8 @@
             </div>
 
             {% if form.errors %}
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                Please fix the errors below.
+            <div class="mb-4">
+                {% include 'components/alert.html' with variant="error" message="Please fix the errors below." %}
             </div>
             {% endif %}
 
@@ -28,94 +28,32 @@
                 {% csrf_token %}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">
-                            Title <span class="text-red-600 text-xs font-normal">required</span>
-                        </label>
-                        {{ form.title }}
-                        {% if form.title.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.title.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">
-                            Household <span class="text-red-600 text-xs font-normal">required</span>
-                        </label>
-                        {{ form.household }}
-                        {% if form.household.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.household.errors.0 }}</p>
-                        {% endif %}
-                    </div>
+                    {% include 'components/form_field.html' with label="Title" field=form.title errors=form.title.errors required=True for_id=form.title.id_for_label %}
+                    {% include 'components/form_field.html' with label="Household" field=form.household errors=form.household.errors required=True for_id=form.household.id_for_label %}
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-800 mb-1">Description</label>
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                    <p class="text-xs text-red-500 mt-1">{{ form.description.errors.0 }}</p>
-                    {% endif %}
-                </div>
+                {% include 'components/form_field.html' with label="Description" field=form.description errors=form.description.errors for_id=form.description.id_for_label %}
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">
-                            Assignment Type <span class="text-red-600 text-xs font-normal">required</span>
-                        </label>
-                        {{ form.assignment_type }}
-                        {% if form.assignment_type.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.assignment_type.errors.0 }}</p>
-                        {% endif %}
-                        <p class="text-xs text-gray-500 mt-1">Assigned = choose user. Global = anyone can claim.</p>
-                    </div>
+                    {% include 'components/form_field.html' with label="Assignment Type" field=form.assignment_type errors=form.assignment_type.errors required=True for_id=form.assignment_type.id_for_label help_text="Assigned = choose user. Global = anyone can claim." %}
                     <div id="assignee-wrapper" data-disable-wrapper="assignee">
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Assignee (for assigned)</label>
-                        {{ form.assigned_to }}
-                        {% if form.assigned_to.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.assigned_to.errors.0 }}</p>
-                        {% endif %}
+                        {% include 'components/form_field.html' with label="Assignee (for assigned)" field=form.assigned_to errors=form.assigned_to.errors for_id=form.assigned_to.id_for_label %}
                     </div>
                     <div id="rotation-wrapper" data-disable-wrapper="rotation">
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Rotation users (for rotating)</label>
-                        {{ form.rotation_users }}
-                        {% if form.rotation_users.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.rotation_users.errors.0 }}</p>
-                        {% endif %}
-                        <p class="text-xs text-gray-500 mt-1">Defaults to everyone; pick who participates in the rotation.</p>
+                        {% include 'components/form_field.html' with label="Rotation users (for rotating)" field=form.rotation_users errors=form.rotation_users.errors for_id=form.rotation_users.id_for_label help_text="Defaults to everyone; pick who participates in the rotation." %}
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Priority</label>
-                        {{ form.priority }}
-                        {% if form.priority.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.priority.errors.0 }}</p>
-                        {% endif %}
-                    </div>
+                    {% include 'components/form_field.html' with label="Priority" field=form.priority errors=form.priority.errors for_id=form.priority.id_for_label %}
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {% include 'components/form_field.html' with label="Points" field=form.base_points errors=form.base_points.errors required=True for_id=form.base_points.id_for_label %}
+                    {% include 'components/form_field.html' with label="Difficulty" field=form.difficulty errors=form.difficulty.errors required=True for_id=form.difficulty.id_for_label %}
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">
-                            Points <span class="text-red-600 text-xs font-normal">required</span>
+                        {% include 'components/form_field.html' with label="Due date (optional)" field=form.due_date errors=form.due_date.errors for_id=form.due_date.id_for_label %}
+                        <label class="inline-flex items-center space-x-2 mt-2">
+                            {{ form.anytime }}
+                            <span class="text-sm text-gray-700">Anytime (no due date / no recurrence)</span>
                         </label>
-                        {{ form.base_points }}
-                        {% if form.base_points.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.base_points.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">
-                            Difficulty <span class="text-red-600 text-xs font-normal">required</span>
-                        </label>
-                        {{ form.difficulty }}
-                        {% if form.difficulty.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.difficulty.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-1">Due date (optional)</label>
-                        {{ form.due_date }}
-                        {% if form.due_date.errors %}
-                        <p class="text-xs text-red-500 mt-1">{{ form.due_date.errors.0 }}</p>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -136,22 +74,10 @@
                         </div>
 
                         <div class="space-y-3" id="recurrence-fields">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-800 mb-1">Frequency</label>
-                                {{ form.frequency }}
-                                {% if form.frequency.errors %}
-                                    <p class="text-xs text-red-500 mt-1">{{ form.frequency.errors.0 }}</p>
-                                {% endif %}
-                            </div>
+                            {% include 'components/form_field.html' with label="Frequency" field=form.frequency errors=form.frequency.errors for_id=form.frequency.id_for_label %}
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-800 mb-1">Repeat every</label>
-                                    {{ form.interval_value }}
-                                    {% if form.interval_value.errors %}
-                                    <p class="text-xs text-red-500 mt-1">{{ form.interval_value.errors.0 }}</p>
-                                    {% endif %}
-                                </div>
+                                {% include 'components/form_field.html' with label="Repeat every" field=form.interval_value errors=form.interval_value.errors for_id=form.interval_value.id_for_label %}
                                 <div>
                                     <p class="text-sm text-gray-700 mb-1">Interval unit</p>
                                     <p id="interval-unit-label" class="text-sm font-semibold text-gray-900">weeks</p>
@@ -160,61 +86,24 @@
                             </div>
 
                             <div id="monthly-fields" class="space-y-2" data-disable-wrapper="monthly">
-                                <label class="block text-sm font-semibold text-gray-800 mb-1">Monthly options</label>
+                                <p class="text-sm font-semibold text-gray-800">Monthly options</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs text-gray-700 mb-1">Mode</label>
-                                        {{ form.monthly_mode }}
-                                        {% if form.monthly_mode.errors %}
-                                        <p class="text-xs text-red-500 mt-1">{{ form.monthly_mode.errors.0 }}</p>
-                                        {% endif %}
-                                    </div>
+                                    {% include 'components/form_field.html' with label="Mode" label_hint="(e.g. day or weekday)" field=form.monthly_mode errors=form.monthly_mode.errors for_id=form.monthly_mode.id_for_label wrapper_classes="text-sm" %}
                                     <div id="monthly-day-wrapper" data-disable-wrapper="monthly-day">
-                                        <label class="block text-xs text-gray-700 mb-1">Day of month</label>
-                                        {{ form.day_of_month }}
-                                        {% if form.day_of_month.errors %}
-                                        <p class="text-xs text-red-500 mt-1">{{ form.day_of_month.errors.0 }}</p>
-                                        {% endif %}
+                                        {% include 'components/form_field.html' with label="Day of month" field=form.day_of_month errors=form.day_of_month.errors for_id=form.day_of_month.id_for_label wrapper_classes="text-sm" %}
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="monthly-weekday-wrapper" data-disable-wrapper="monthly-weekday">
-                                    <div>
-                                        <label class="block text-xs text-gray-700 mb-1">Week of month</label>
-                                        {{ form.week_of_month }}
-                                        {% if form.week_of_month.errors %}
-                                        <p class="text-xs text-red-500 mt-1">{{ form.week_of_month.errors.0 }}</p>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-700 mb-1">Weekday</label>
-                                        {{ form.weekday_of_month }}
-                                        {% if form.weekday_of_month.errors %}
-                                        <p class="text-xs text-red-500 mt-1">{{ form.weekday_of_month.errors.0 }}</p>
-                                        {% endif %}
-                                    </div>
+                                    {% include 'components/form_field.html' with label="Week of month" field=form.week_of_month errors=form.week_of_month.errors for_id=form.week_of_month.id_for_label wrapper_classes="text-sm" %}
+                                    {% include 'components/form_field.html' with label="Weekday" field=form.weekday_of_month errors=form.weekday_of_month.errors for_id=form.weekday_of_month.id_for_label wrapper_classes="text-sm" %}
                                 </div>
                             </div>
 
                             <div id="weekly-fields" data-disable-wrapper="weekly">
-                                <label class="block text-sm font-semibold text-gray-800 mb-1">Active days of week
-                                    (optional)</label>
-                                {{ form.days_of_week }}
-                                {% if form.days_of_week.errors %}
-                                <p class="text-xs text-red-500 mt-1">{{ form.days_of_week.errors.0 }}</p>
-                                {% endif %}
-                                <p class="text-xs text-gray-500 mt-1">Applies to any frequency; leave empty for all
-                                    days.</p>
+                                {% include 'components/form_field.html' with label="Active days of week (optional)" field=form.days_of_week errors=form.days_of_week.errors for_id=form.days_of_week.id_for_label help_text="Applies to any frequency; leave empty for all days." %}
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-800 mb-1">Active months
-                                    (optional)</label>
-                                {{ form.months_of_year }}
-                                {% if form.months_of_year.errors %}
-                                <p class="text-xs text-red-500 mt-1">{{ form.months_of_year.errors.0 }}</p>
-                                {% endif %}
-                                <p class="text-xs text-gray-500 mt-1">Limit to certain months (e.g., summer tasks).</p>
-                            </div>
+                            {% include 'components/form_field.html' with label="Active months (optional)" field=form.months_of_year errors=form.months_of_year.errors for_id=form.months_of_year.id_for_label help_text="Limit to certain months (e.g., summer tasks)." %}
 
                             <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                                 <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Summary</p>
@@ -237,13 +126,18 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-3">
-                    <a href="{% url 'home' %}?household={{ selected_household.id }}"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</a>
-                    <button type="submit"
-                        class="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition">
-                        {% if edit_mode %}Update chore{% else %}Create chore{% endif %}
-                    </button>
+                <div class="flex justify-end gap-3 items-center flex-wrap">
+                    {% url 'home' as home_url %}
+                    {% if selected_household %}
+                        {% with household_id=selected_household.id|stringformat:"s" %}
+                            {% with cancel_href=home_url|add:"?household="|add:household_id %}
+                                {% include 'components/button.html' with href=cancel_href label="Cancel" variant="secondary" size="md" %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        {% include 'components/button.html' with href=home_url label="Cancel" variant="secondary" size="md" %}
+                    {% endif %}
+                    {% include 'components/button.html' with type="submit" label=edit_mode|yesno:"Update chore,Create chore" variant="primary" size="lg" %}
                     <div class="flex items-center text-sm text-gray-500">
                         <span class="mr-2">Effort/points preview:</span>
                         <span id="points-preview" class="font-semibold text-gray-800">{{ form.base_points.value|default:form.base_points.initial|default:10 }} pts · {{ form.difficulty.value|default:form.difficulty.initial|default:"medium" }}</span>
