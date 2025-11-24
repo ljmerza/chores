@@ -79,24 +79,53 @@ class RewardForm(forms.Form):
         widget=forms.DateTimeInput(attrs={'class': TAILWIND_INPUT_CLASS, 'type': 'datetime-local'})
     )
 
-    def __init__(self, *args, user=None, household=None, **kwargs):
+    def __init__(self, *args, user=None, household=None, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.instance = instance
+
+        target_household = household or (instance.household if instance else None)
+
         if user:
-            households = Household.objects.filter(memberships__user=user).distinct()
+            if user.is_staff or getattr(user, 'role', None) == 'admin':
+                households = Household.objects.all()
+            else:
+                households = Household.objects.filter(memberships__user=user).distinct()
             self.fields['household'].queryset = households
-            if household:
-                self.fields['household'].initial = household.id
+            if target_household:
+                self.fields['household'].initial = target_household.id
                 self.fields['allowed_members'].queryset = User.objects.filter(
-                    household_memberships__household=household
+                    household_memberships__household=target_household
                 ).distinct()
                 self.fields['allowed_members'].label_from_instance = (
                     lambda obj: obj.full_name or obj.email or f"User {obj.id}"
                 )
+
         if not self.is_bound:
             self.fields['category'].initial = 'other'
             self.fields['requires_approval'].initial = True
             self.fields['is_active'].initial = True
             self.fields['unlimited_quantity'].initial = True
+
+            if instance:
+                self.fields['title'].initial = instance.title
+                self.fields['description'].initial = instance.description
+                self.fields['instructions'].initial = instance.instructions
+                self.fields['household'].initial = instance.household_id
+                self.fields['point_cost'].initial = instance.point_cost
+                self.fields['category'].initial = instance.category
+                self.fields['quantity_available'].initial = instance.quantity_available
+                self.fields['unlimited_quantity'].initial = instance.quantity_available is None
+                self.fields['per_user_limit'].initial = instance.per_user_limit
+                self.fields['cooldown_days'].initial = instance.cooldown_days
+                self.fields['low_stock_threshold'].initial = instance.low_stock_threshold
+                self.fields['allowed_members'].initial = list(instance.allowed_members.values_list('id', flat=True))
+                self.fields['tags'].initial = instance.tags
+                self.fields['requires_approval'].initial = instance.requires_approval
+                self.fields['is_featured'].initial = instance.is_featured
+                self.fields['is_active'].initial = instance.is_active
+                self.fields['available_from'].initial = instance.available_from
+                self.fields['available_until'].initial = instance.available_until
+
         if self.errors:
             for name, field in self.fields.items():
                 if name in self.errors:

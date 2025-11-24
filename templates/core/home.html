@@ -89,7 +89,7 @@
                 <h2 class="text-xl font-bold text-gray-900">Owner/Admin shortcuts</h2>
                 <span class="text-xs text-gray-500">Admins can do chores too — keep earning points.</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 <a href="{% url 'manage_household' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
                     <span class="font-semibold text-gray-800">Manage household</span>
@@ -104,6 +104,11 @@
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
                     <span class="font-semibold text-gray-800">Create chore</span>
                     <span class="text-primary text-xl">+</span>
+                </a>
+                <a href="{% url 'manage_rewards' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <span class="font-semibold text-gray-800">Manage rewards</span>
+                    <span class="text-primary text-xl">★</span>
                 </a>
                 <a href="{% url 'create_reward' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">

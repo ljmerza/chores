@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Reward - Chore Manager{% endblock %}
+{% block title %}{% if edit_mode %}Edit Reward{% else %}Create Reward{% endif %} - Chore Manager{% endblock %}
 
 {% block navbar %}
     {% include 'components/navbar.html' %}
@@ -19,7 +19,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <p class="text-xs uppercase font-semibold text-primary tracking-wider">Rewards</p>
-                    <h1 class="text-3xl font-bold text-gray-900">Create a reward</h1>
+                    <h1 class="text-3xl font-bold text-gray-900">{% if edit_mode %}Edit reward{% else %}Create a reward{% endif %}</h1>
                     <p class="text-gray-600 mt-1">Set the cost, availability, and limits for this household.</p>
                 </div>
                 <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
@@ -88,8 +88,18 @@
                     </label>
                 </div>
 
-                <div class="flex justify-end">
-                    {% include 'components/button.html' with type="submit" label="Create reward" %}
+                <div class="flex justify-end gap-3 items-center">
+                    {% url 'manage_rewards' as manage_rewards_url %}
+                    {% if selected_household %}
+                        {% with household_id=selected_household.id|stringformat:"s" %}
+                            {% with back_href=manage_rewards_url|add:"?household="|add:household_id %}
+                                {% include 'components/button.html' with href=back_href label="Back" variant="secondary" %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        {% include 'components/button.html' with href=manage_rewards_url label="Back" variant="secondary" %}
+                    {% endif %}
+                    {% include 'components/button.html' with type="submit" label=edit_mode|yesno:"Update reward,Create reward" %}
                 </div>
             </form>
         </div>
