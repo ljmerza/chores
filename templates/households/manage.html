@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Household - Chore Manager{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-6xl mx-auto space-y-6">
+        {% if messages %}
+        <div>
+            {% include 'components/messages.html' %}
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-xs uppercase font-semibold text-primary tracking-wider">Household</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Manage {{ selected_household.name }}</h1>
+                    <p class="text-gray-600 mt-1">Update details, invite members, and adjust roles.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
+                        <label for="household" class="text-sm text-gray-600">Household</label>
+                        <select name="household" id="household" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
+                            {% for h in households %}
+                                <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="ml-2 text-primary font-semibold text-sm hover:underline">Switch</button>
+                    </form>
+                    <div class="flex items-center gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg px-4 py-3">
+                        <div>
+                            <p class="text-xs uppercase text-gray-500 tracking-widest">Invite Code</p>
+                            <p class="text-lg font-mono font-semibold text-primary">{{ selected_household.invite_code }}</p>
+                        </div>
+                        <form method="post" class="ml-auto">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="regenerate_invite">
+                            <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+                            {% include 'components/button.html' with type="submit" label="Regenerate" variant="secondary" size="sm" %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% include 'components/stat_tile.html' with label="Members" value=member_count helper="Total active members" %}
+            {% include 'components/stat_tile.html' with label="Admins" value=admin_count helper="Must keep at least one admin" tone="primary" %}
+            {% include 'components/stat_tile.html' with label="Household Points" value=total_points helper="Sum of current points" tone="gray" %}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 space-y-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Household details</h3>
+                    <p class="text-sm text-gray-500">Rename or update the description members see.</p>
+                </div>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_details">
+                    <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+                    {% include 'components/form_field.html' with label="Name" field=details_form.name errors=details_form.name.errors required=True %}
+                    {% include 'components/form_field.html' with label="Description" field=details_form.description errors=details_form.description.errors %}
+                    <div class="flex justify-end">
+                        {% include 'components/button.html' with type="submit" label="Save changes" %}
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 space-y-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Invite a member</h3>
+                    <p class="text-sm text-gray-500">Create an account and add them to this household.</p>
+                </div>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="invite_member">
+                    <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% include 'components/form_field.html' with label="First name" field=invite_form.first_name errors=invite_form.first_name.errors required=True %}
+                        {% include 'components/form_field.html' with label="Last name" field=invite_form.last_name errors=invite_form.last_name.errors %}
+                    </div>
+                    {% include 'components/form_field.html' with label="Email" field=invite_form.email errors=invite_form.email.errors required=True %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% include 'components/form_field.html' with label="Role" field=invite_form.role errors=invite_form.role.errors %}
+                        {% include 'components/form_field.html' with label="Set password" field=invite_form.password errors=invite_form.password.errors help_text="Leave blank to set later." %}
+                    </div>
+                    <div class="flex justify-end">
+                        {% include 'components/button.html' with type="submit" label="Add member" %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Members</h2>
+                    <p class="text-sm text-gray-500">Adjust roles or remove people from this household.</p>
+                </div>
+                <span class="text-xs text-gray-500">Admins appear first</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-100">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Member</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Points</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Role</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for row in member_rows %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div>
+                                        <p class="font-semibold text-gray-900">{{ row.membership.user.full_name|default:"Unnamed" }}</p>
+                                        <p class="text-xs text-gray-500">{{ row.membership.user.email|default:"(no email)" }}</p>
+                                    </div>
+                                    {% if row.membership.role == 'admin' %}
+                                        {% include 'components/badge.html' with text="Admin" variant="primary" %}
+                                    {% endif %}
+                                    {% if request.user.id == row.membership.user.id %}
+                                        {% include 'components/badge.html' with text="You" variant="info" %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-700">
+                                {% if row.score %}
+                                    <div class="font-semibold text-gray-900">{{ row.score.current_points|default:0 }} pts</div>
+                                    <p class="text-xs text-gray-500">Lifetime: {{ row.score.lifetime_points|default:0 }}</p>
+                                {% else %}
+                                    <span class="text-gray-500 text-sm">No score yet</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-700">
+                                <form method="post" class="flex items-center gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="change_role">
+                                    <input type="hidden" name="membership_id" value="{{ row.membership.id }}">
+                                    <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+                                    <select name="role" class="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="admin" {% if row.membership.role == 'admin' %}selected{% endif %}>Admin</option>
+                                        <option value="member" {% if row.membership.role == 'member' %}selected{% endif %}>Member</option>
+                                    </select>
+                                    {% include 'components/button.html' with type="submit" label="Update" variant="secondary" size="sm" %}
+                                </form>
+                                {% if row.membership.role == 'admin' and admin_count <= 1 %}
+                                    <p class="text-xs text-red-500 mt-1">At least one admin required.</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-4 text-right text-sm">
+                                <form method="post" class="inline-flex">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="remove_member">
+                                    <input type="hidden" name="membership_id" value="{{ row.membership.id }}">
+                                    <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+                                    <button type="submit" {% if row.membership.role == 'admin' and admin_count <= 1 %}disabled{% endif %} class="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 shadow-sm bg-red-600 text-white hover:bg-red-700 text-sm px-3 py-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        Remove
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">
+                                No members yet. Invite someone to get started.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

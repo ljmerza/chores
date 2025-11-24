@@ -28,12 +28,14 @@ from core.views import (
     redeem_reward
 )
 from chores.views import CreateChoreView, EditChoreView
+from households.views import ManageHouseholdView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('setup/', SetupWizardView.as_view(), name='setup_wizard'),
     path('setup/members/', SetupWizardMembersView.as_view(), name='setup_wizard_members'),
     path('invite/', InviteSignupView.as_view(), name='invite_signup'),
+    path('households/manage/', ManageHouseholdView.as_view(), name='manage_household'),
     path('chores/create/', CreateChoreView.as_view(), name='create_chore'),
     path('chores/<int:pk>/edit/', EditChoreView.as_view(), name='edit_chore'),
     path('chores/<int:pk>/claim/', claim_chore, name='claim_chore'),

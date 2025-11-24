@@ -90,7 +90,7 @@
                 <span class="text-xs text-gray-500">Admins can do chores too — keep earning points.</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <a href="/admin/households/household/"
+                <a href="{% url 'manage_household' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
                     <span class="font-semibold text-gray-800">Manage household</span>
                     <span class="text-primary text-xl">↗</span>

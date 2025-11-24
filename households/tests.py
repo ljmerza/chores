@@ -2,9 +2,10 @@ from unittest.mock import patch
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.urls import reverse
 
 from core.models import User
-from households.models import Household, UserScore
+from households.models import Household, HouseholdMembership, UserScore
 
 
 class HouseholdModelTests(TestCase):
@@ -36,3 +37,129 @@ class HouseholdModelTests(TestCase):
                     current_points=-1,
                     lifetime_points=0,
                 )
+
+
+class ManageHouseholdViewTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            email="owner@example.com",
+            password="Str0ngPass!",
+            role="admin",
+            first_name="Owner",
+        )
+        self.household = Household.objects.create(name="Home", created_by=self.owner)
+        self.owner_membership = HouseholdMembership.objects.create(
+            household=self.household,
+            user=self.owner,
+            role="admin",
+        )
+        UserScore.objects.create(user=self.owner, household=self.household)
+        self.url = reverse("manage_household")
+
+    def test_member_cannot_access_manage(self):
+        member = User.objects.create_user(email="member@example.com", password="pass")
+        HouseholdMembership.objects.create(
+            household=self.household,
+            user=member,
+            role="member",
+        )
+
+        self.client.force_login(member)
+        response = self.client.get(self.url, {"household": self.household.id})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("home"), response.url)
+
+    def test_admin_updates_details(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            self.url,
+            {
+                "action": "update_details",
+                "household_id": self.household.id,
+                "name": "Updated Name",
+                "description": "Updated description",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.household.refresh_from_db()
+        self.assertEqual(self.household.name, "Updated Name")
+        self.assertEqual(self.household.description, "Updated description")
+
+    def test_invite_member_creates_user_and_score(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            self.url,
+            {
+                "action": "invite_member",
+                "household_id": self.household.id,
+                "first_name": "New",
+                "last_name": "Member",
+                "email": "new@example.com",
+                "role": "member",
+                "password": "TempPass123!",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(email="new@example.com")
+        self.assertTrue(
+            HouseholdMembership.objects.filter(
+                household=self.household, user=user, role="member"
+            ).exists()
+        )
+        self.assertTrue(
+            UserScore.objects.filter(household=self.household, user=user).exists()
+        )
+
+    def test_cannot_remove_last_admin(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            self.url,
+            {
+                "action": "remove_member",
+                "household_id": self.household.id,
+                "membership_id": self.owner_membership.id,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            HouseholdMembership.objects.filter(
+                id=self.owner_membership.id
+            ).exists()
+        )
+
+    def test_change_role_when_multiple_admins(self):
+        second_admin = User.objects.create_user(
+            email="second@example.com", password="Str0ngPass!", role="admin"
+        )
+        HouseholdMembership.objects.create(
+            household=self.household,
+            user=second_admin,
+            role="admin",
+        )
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            self.url,
+            {
+                "action": "change_role",
+                "household_id": self.household.id,
+                "membership_id": self.owner_membership.id,
+                "role": "member",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.owner_membership.refresh_from_db()
+        self.assertEqual(self.owner_membership.role, "member")
+
+    def test_regenerate_invite_code(self):
+        self.client.force_login(self.owner)
+        old_code = self.household.invite_code
+        response = self.client.post(
+            self.url,
+            {
+                "action": "regenerate_invite",
+                "household_id": self.household.id,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.household.refresh_from_db()
+        self.assertNotEqual(old_code, self.household.invite_code)
