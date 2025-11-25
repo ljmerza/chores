@@ -174,18 +174,16 @@
                                 {% endif %}
                             </td>
                             <td class="px-4 py-4 text-right text-sm">
-                                {% with can_redeem=reward.is_available and user_score and user_score.current_points|default:0 >= reward.point_cost %}
-                                    {% if can_redeem %}
-                                        <form method="post" action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}">
-                                            {% csrf_token %}
-                                            {% include 'components/button.html' with type="submit" label="Redeem" size="sm" %}
-                                        </form>
-                                    {% elif reward.is_available %}
-                                        <div class="text-xs text-gray-500 text-right">Need {{ reward.point_cost }} pts</div>
-                                    {% else %}
-                                        <div class="text-xs text-gray-500 text-right">Unavailable</div>
-                                    {% endif %}
-                                {% endwith %}
+                                {% if reward.is_available and user_score and user_score.current_points|default:0 >= reward.point_cost %}
+                                    <form method="post" action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}">
+                                        {% csrf_token %}
+                                        {% include 'components/button.html' with type="submit" label="Redeem" size="sm" %}
+                                    </form>
+                                {% elif reward.is_available %}
+                                    <div class="text-xs text-gray-500 text-right">Need {{ reward.point_cost }} pts</div>
+                                {% else %}
+                                    <div class="text-xs text-gray-500 text-right">Unavailable</div>
+                                {% endif %}
                             </td>
                         </tr>
                         {% empty %}
