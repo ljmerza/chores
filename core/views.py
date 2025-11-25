@@ -18,6 +18,65 @@ from rewards.services import request_redemption, RewardError
 from .forms import InviteSignupForm, SetupWizardForm, AdditionalAccountFormSet, LoginForm
 
 
+class AdminHubView(LoginRequiredMixin, TemplateView):
+    """
+    Admin-only shortcuts hub for managing the selected household.
+    """
+    template_name = 'core/admin_hub.html'
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.households = self._household_queryset()
+        if not self.households.exists():
+            messages.error(request, "Join or create a household to manage it.")
+            return redirect('home')
+
+        self.selected_household = self._selected_household()
+        if not self.selected_household:
+            messages.error(request, "Select a household to manage.")
+            return redirect('home')
+
+        if not self._is_admin(request.user, self.selected_household):
+            messages.error(request, "You need to be an admin to access management tools.")
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def _household_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Household.objects.all()
+        return Household.objects.filter(
+            memberships__user=user,
+            memberships__role='admin'
+        ).distinct()
+
+    def _selected_household(self):
+        requested = self.request.GET.get('household')
+        if requested:
+            return self.households.filter(id=requested).first()
+        return self.households.first()
+
+    def _is_admin(self, user, household):
+        return (
+            HouseholdMembership.objects.filter(
+                household=household,
+                user=user,
+                role='admin'
+            ).exists()
+            or user.is_staff
+            or user.role == 'admin'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'households': self.households,
+            'selected_household': self.selected_household,
+        })
+        return context
+
+
 class SetupWizardView(TemplateView):
     template_name = 'core/setup_wizard.html'
 

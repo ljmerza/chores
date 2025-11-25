@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Hub{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-sm uppercase text-primary tracking-widest font-semibold">Admin Hub</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Manage your household</h1>
+                    <p class="text-gray-600 mt-2">Jump to household, chore, and reward management from one place.</p>
+                </div>
+                <form method="get"
+                      class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
+                    <label for="household" class="text-sm text-gray-600 mr-2">Household</label>
+                    <select name="household" id="household"
+                            class="bg-transparent text-gray-900 font-semibold focus:outline-none">
+                        {% for h in households %}
+                        <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="ml-3 text-primary font-semibold hover:underline">Switch</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Admin shortcuts</h2>
+                <span class="text-xs text-gray-500">Tools for managing {{ selected_household.name }}.</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
+                <a href="{% url 'manage_household' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Manage household</p>
+                        <p class="text-xs text-gray-500">Members, invites, and settings</p>
+                    </div>
+                    <span class="text-primary text-xl">↗</span>
+                </a>
+                <a href="{% url 'manage_chores' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Manage chores</p>
+                        <p class="text-xs text-gray-500">Active chores and templates</p>
+                    </div>
+                    <span class="text-primary text-xl">✔</span>
+                </a>
+                <a href="{% url 'create_chore' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Create chore</p>
+                        <p class="text-xs text-gray-500">Assign, rotate, or claimable</p>
+                    </div>
+                    <span class="text-primary text-xl">+</span>
+                </a>
+                <a href="{% url 'manage_rewards' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Manage rewards</p>
+                        <p class="text-xs text-gray-500">Stock, limits, and status</p>
+                    </div>
+                    <span class="text-primary text-xl">★</span>
+                </a>
+                <a href="{% url 'create_reward' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Add reward</p>
+                        <p class="text-xs text-gray-500">New reward with cost and stock</p>
+                    </div>
+                    <span class="text-primary text-xl">★</span>
+                </a>
+                <a href="/admin/"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Django admin</p>
+                        <p class="text-xs text-gray-500">Full data access</p>
+                    </div>
+                    <span class="text-primary text-xl">↗</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

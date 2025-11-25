@@ -42,11 +42,7 @@
                     <p class="text-sm uppercase text-primary tracking-widest font-semibold">Dashboard</p>
                     <h1 class="text-4xl font-bold text-gray-900">Hello, {{ user.full_name }}!</h1>
                     <p class="text-gray-600 mt-1">
-                        {% if is_admin %}
-                        You're an owner/admin. You can manage the household and still earn points from chores.
-                        {% else %}
-                        Stay on top of your chores and rewards.
-                        {% endif %}
+                        Stay on top of your chores and rewards. Admins also get shortcuts to manage the household.
                     </p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 items-stretch">
@@ -90,48 +86,6 @@
             {% endwith %}
             {% include 'components/stat_tile.html' with label="Claimable" value=summary_counts.claimable|default:0 helper="Global chores anyone can take" tone="primary" %}
         </div>
-
-        {% if is_admin %}
-        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-900">Owner/Admin shortcuts</h2>
-                <span class="text-xs text-gray-500">Admins can do chores too — keep earning points.</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <a href="{% url 'manage_household' %}?household={{ selected_household.id }}"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Manage household</span>
-                    <span class="text-primary text-xl">↗</span>
-                </a>
-                <a href="{% url 'manage_chores' %}?household={{ selected_household.id }}"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Manage chores</span>
-                    <span class="text-primary text-xl">✔</span>
-                </a>
-                <a href="{% url 'create_chore' %}?household={{ selected_household.id }}"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Create chore</span>
-                    <span class="text-primary text-xl">+</span>
-                </a>
-                <a href="{% url 'manage_rewards' %}?household={{ selected_household.id }}"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Manage rewards</span>
-                    <span class="text-primary text-xl">★</span>
-                </a>
-                <a href="{% url 'create_reward' %}?household={{ selected_household.id }}"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Add reward</span>
-                    <span class="text-primary text-xl">★</span>
-                </a>
-                <a href="/admin/"
-                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
-                    <span class="font-semibold text-gray-800">Admin panel</span>
-                    <span class="text-primary text-xl">↗</span>
-                </a>
-            </div>
-        </div>
-        {% endif %}
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-xl shadow border border-gray-100">
@@ -155,12 +109,6 @@
                                 <p class="text-sm text-red-700 mt-1">Anytime</p>
                                     {% endif %}
                                     <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
-                                    {% if is_admin %}
-                                    <div class="flex gap-2 mt-2">
-                                        <a href="{% url 'edit_chore' chore.id %}?household={{ selected_household.id }}"
-                                            class="text-xs text-primary font-semibold inline-flex items-center">Edit</a>
-                                    </div>
-                                    {% endif %}
                                     <form method="post"
                                         action="{% url 'complete_chore' chore.id %}?household={{ selected_household.id }}"
                                         class="mt-3">
@@ -191,12 +139,6 @@
                                 <p class="text-sm text-gray-600 mt-1">Anytime</p>
                                     {% endif %}
                                     <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
-                                    {% if is_admin %}
-                                    <div class="flex gap-2 mt-2">
-                                        <a href="{% url 'edit_chore' chore.id %}?household={{ selected_household.id }}"
-                                            class="text-xs text-primary font-semibold inline-flex items-center">Edit</a>
-                                    </div>
-                                    {% endif %}
                                     <form method="post"
                                         action="{% url 'complete_chore' chore.id %}?household={{ selected_household.id }}"
                                         class="mt-3">
@@ -234,11 +176,6 @@
                                 {% endif %}
                                 <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Difficulty: {{
                                     chore.get_difficulty_display }}</p>
-                                {% if is_admin %}
-                                <div class="flex gap-2 mt-2">
-                                    <a href="{% url 'edit_chore' chore.id %}?household={{ selected_household.id }}"
-                                        class="text-xs text-primary font-semibold inline-flex items-center">Edit</a>
-                                {% endif %}
                                 <form method="post"
                                     action="{% url 'claim_chore' chore.id %}?household={{ selected_household.id }}"
                                     class="mt-3">
@@ -285,98 +222,84 @@
                     </div>
                 </div>
 
-                {% if is_admin %}
-                    <div class="bg-white rounded-xl shadow border border-gray-100">
-                        <div class="px-5 pt-5">
-                            {% if user_score %}
-                                {% with points_value=user_score.current_points|default_if_none:0|stringformat:"s" %}
-                                    {% with points_label="You have "|add:points_value|add:" pts" %}
-                                        {% with action_html="<span class='text-xs text-gray-600'>"|add:points_label|add:"</span>" %}
-                                            {% include 'components/section_header.html' with title="Rewards" action_content=action_html %}
-                                        {% endwith %}
+                <div class="bg-white rounded-xl shadow border border-gray-100">
+                    <div class="px-5 pt-5">
+                        {% if user_score %}
+                            {% with points_value=user_score.current_points|default_if_none:0|stringformat:"s" %}
+                                {% with points_label="You have "|add:points_value|add:" pts" %}
+                                    {% with action_html="<span class='text-xs text-gray-600'>"|add:points_label|add:"</span>" %}
+                                        {% include 'components/section_header.html' with title="Rewards" action_content=action_html %}
                                     {% endwith %}
-                                {% endwith %}
-                            {% else %}
-                                {% include 'components/section_header.html' with title="Rewards" %}
-                            {% endif %}
-                        </div>
-                        <div class="p-5 space-y-3">
-                            {% if affordable_rewards %}
-                            <p class="text-sm text-gray-600 font-semibold">You can afford</p>
-                            <div class="space-y-2">
-                                {% for reward in affordable_rewards %}
-                                <div
-                                    class="flex items-center justify-between border border-green-200 bg-green-50 rounded-lg px-3 py-2">
-                                    <div>
-                                        <p class="font-semibold text-gray-900">{{ reward.title }}</p>
-                                        <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
-                                    </div>
-                                    <span class="text-sm font-bold text-green-700">{{ reward.point_cost }} pts</span>
-                                    <a href="/admin/rewards/reward/{{ reward.id }}/change/"
-                                        class="text-[11px] text-primary font-semibold ml-2">Admin</a>
-                                    <form method="post"
-                                        action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}"
-                                        class="ml-2">
-                                        {% csrf_token %}
-                                        {% include 'components/button.html' with type="submit" label="Redeem" variant="success" size="sm" extra_classes="text-[11px] px-3 py-1" %}
-                                    </form>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-
-                            {% if available_rewards %}
-                            <p
-                                class="text-sm text-gray-600 font-semibold {% if affordable_rewards %}pt-3 border-t border-gray-100{% endif %}">
-                                All available</p>
-                            <div class="space-y-2">
-                                {% for reward in available_rewards %}
-                                <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
-                                    <div>
-                                        <p class="font-semibold text-gray-900">{{ reward.title }}</p>
-                                        <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
-                                    </div>
-                                    <span class="text-sm font-bold text-gray-700">{{ reward.point_cost }} pts</span>
-                                    <a href="/admin/rewards/reward/{{ reward.id }}/change/"
-                                        class="text-[11px] text-primary font-semibold ml-2">Admin</a>
-                                    {% if user_score and user_score.current_points >= reward.point_cost %}
-                                    <form method="post"
-                                        action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}"
-                                        class="ml-2">
-                                        {% csrf_token %}
-                                        {% include 'components/button.html' with type="submit" label="Redeem" variant="primary" size="sm" extra_classes="text-[11px] px-3 py-1" %}
-                                    </form>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <p class="text-sm text-gray-500">No rewards yet.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="bg-white rounded-xl shadow border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6">
-                        <div>
-                            <p class="text-xs uppercase font-semibold text-primary tracking-wider">Rewards</p>
-                            <h2 class="text-2xl font-bold text-gray-900">Browse and redeem</h2>
-                            <p class="text-sm text-gray-600 mt-1">See everything available, filter, and redeem in one place.</p>
-                            {% if user_score %}
-                                <p class="text-sm text-gray-700 mt-2">You have <span class="font-semibold text-primary">{{ user_score.current_points|default:0 }} pts</span>.</p>
-                            {% endif %}
-                        </div>
-                        {% url 'redeem_rewards' as redeem_url %}
-                        {% if selected_household %}
-                            {% with household_id=selected_household.id|stringformat:"s" %}
-                                {% with redeem_href=redeem_url|add:"?household="|add:household_id %}
-                                    {% include 'components/button.html' with href=redeem_href label="Open rewards" variant="primary" size="md" %}
                                 {% endwith %}
                             {% endwith %}
                         {% else %}
-                            {% include 'components/button.html' with href=redeem_url label="Open rewards" variant="primary" size="md" %}
+                            {% include 'components/section_header.html' with title="Rewards" %}
                         {% endif %}
                     </div>
-                {% endif %}
+                    <div class="p-5 space-y-3">
+                        {% if affordable_rewards %}
+                        <p class="text-sm text-gray-600 font-semibold">You can afford</p>
+                        <div class="space-y-2">
+                            {% for reward in affordable_rewards %}
+                            <div
+                                class="flex items-center justify-between border border-green-200 bg-green-50 rounded-lg px-3 py-2">
+                                <div>
+                                    <p class="font-semibold text-gray-900">{{ reward.title }}</p>
+                                    <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
+                                </div>
+                                <span class="text-sm font-bold text-green-700">{{ reward.point_cost }} pts</span>
+                                <form method="post"
+                                    action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}"
+                                    class="ml-2">
+                                    {% csrf_token %}
+                                    {% include 'components/button.html' with type="submit" label="Redeem" variant="success" size="sm" extra_classes="text-[11px] px-3 py-1" %}
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% if available_rewards %}
+                        <p
+                            class="text-sm text-gray-600 font-semibold {% if affordable_rewards %}pt-3 border-t border-gray-100{% endif %}">
+                            All available</p>
+                        <div class="space-y-2">
+                            {% for reward in available_rewards %}
+                            <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+                                <div>
+                                    <p class="font-semibold text-gray-900">{{ reward.title }}</p>
+                                    <p class="text-xs text-gray-600">{{ reward.get_category_display }}</p>
+                                </div>
+                                <span class="text-sm font-bold text-gray-700">{{ reward.point_cost }} pts</span>
+                                {% if user_score and user_score.current_points >= reward.point_cost %}
+                                <form method="post"
+                                    action="{% url 'redeem_reward' reward.id %}?household={{ selected_household.id }}"
+                                    class="ml-2">
+                                    {% csrf_token %}
+                                    {% include 'components/button.html' with type="submit" label="Redeem" variant="primary" size="sm" extra_classes="text-[11px] px-3 py-1" %}
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-gray-500">No rewards yet.</p>
+                        {% endif %}
+
+                        <div class="pt-2">
+                            {% url 'redeem_rewards' as redeem_url %}
+                            {% if selected_household %}
+                                {% with household_id=selected_household.id|stringformat:"s" %}
+                                    {% with redeem_href=redeem_url|add:"?household="|add:household_id %}
+                                        {% include 'components/button.html' with href=redeem_href label="Open rewards page" variant="secondary" size="sm" extra_classes="w-full sm:w-auto" %}
+                                    {% endwith %}
+                                {% endwith %}
+                            {% else %}
+                                {% include 'components/button.html' with href=redeem_url label="Open rewards page" variant="secondary" size="sm" extra_classes="w-full sm:w-auto" %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
                 <div class="bg-white rounded-xl shadow border border-gray-100">
                     <div class="px-5 pt-5">
@@ -389,11 +312,6 @@
                             <p class="font-semibold text-gray-900">{{ note.title }}</p>
                             <p class="text-xs text-gray-600 mt-1">{{ note.message }}</p>
                             <p class="text-[11px] text-gray-400 mt-1">{{ note.created_at|date:"M j, g:ia" }}</p>
-                            {% if is_admin %}
-                            <a href="/admin/chores/notification/{{ note.id }}/change/"
-                                class="text-[11px] text-primary font-semibold mt-1 inline-flex items-center">Admin view
-                                ↗</a>
-                            {% endif %}
                         </div>
                         {% endfor %}
                         {% else %}
