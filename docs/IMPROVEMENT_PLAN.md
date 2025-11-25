@@ -5,8 +5,8 @@ Plans to deliver each suggested change. Each section lists objectives, concrete 
 ## 1) Model Invariants & Indexes
 - Objectives: enforce non-negative values, prevent duplicate invite codes, add useful indexes.
 - Steps:
-  - [ ] Convert point/quantity fields to `PositiveIntegerField` or add `CheckConstraint` where negatives are allowed (e.g., penalties) but need bounds. (Most in place; `Leaderboard.points/chores_completed/rank` and `PointTransaction.balance_after` still allow negatives—decide guard/constraint.)
-  - [ ] Add `clean()` validations for `Reward` and `Chore` point ranges; keep `save()` logic to backfill `quantity_remaining` on create (backfill is in place).
+  - [x] Convert point/quantity fields to `PositiveIntegerField` or add `CheckConstraint` where negatives are allowed (e.g., penalties) but need bounds. (Most in place; `Leaderboard.points/chores_completed/rank` and `PointTransaction.balance_after` now enforced as non-negative.)
+  - [x] Add `clean()` validations for `Reward` and `Chore` point ranges; keep `save()` logic to backfill `quantity_remaining` on create (backfill is in place).
   - [x] Implement an invite-code regeneration loop to guarantee uniqueness on `Household` creation/regeneration.
   - [x] Add DB index: `Chore(household, status, priority)`.
   - [ ] Add DB index: `ChoreInstance(household via chore, status, due_date)` (current indexes cover status/due_date only; household scope still missing).

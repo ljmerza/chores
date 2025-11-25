@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 
 from django.db import IntegrityError, transaction
@@ -5,7 +6,13 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.models import User
-from households.models import Household, HouseholdMembership, UserScore
+from households.models import (
+    Household,
+    HouseholdMembership,
+    Leaderboard,
+    PointTransaction,
+    UserScore,
+)
 
 
 class HouseholdModelTests(TestCase):
@@ -36,6 +43,38 @@ class HouseholdModelTests(TestCase):
                     household=household,
                     current_points=-1,
                     lifetime_points=0,
+                )
+
+    def test_point_transaction_requires_non_negative_balance(self):
+        household = Household.objects.create(name="Home", created_by=self.user)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                PointTransaction.objects.create(
+                    user=self.user,
+                    household=household,
+                    transaction_type="earned",
+                    amount=5,
+                    balance_after=-1,
+                    source_type="manual",
+                    source_id=None,
+                    description="Invalid balance",
+                    created_by=self.user,
+                )
+
+    def test_leaderboard_enforces_non_negative_fields(self):
+        household = Household.objects.create(name="Home", created_by=self.user)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Leaderboard.objects.create(
+                    household=household,
+                    user=self.user,
+                    period="weekly",
+                    period_start_date=date.today(),
+                    points=-10,
+                    chores_completed=1,
+                    rank=1,
                 )
 
 

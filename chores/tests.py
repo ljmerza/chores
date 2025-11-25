@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
@@ -5,7 +6,7 @@ from django.utils import timezone
 from core.models import User
 from core.services.chores import complete_chore_instance
 from households.models import Household
-from chores.models import Chore, ChoreInstance, Notification
+from chores.models import Chore, ChoreInstance, Notification, MAX_CHORE_POINTS
 
 
 class ChoreModelTests(TestCase):
@@ -24,6 +25,22 @@ class ChoreModelTests(TestCase):
                     base_points=-5,
                     created_by=self.user,
                 )
+
+    def test_base_points_clean_validates_range(self):
+        chore = Chore(
+            household=self.household,
+            title="Validate Points",
+            category="cleaning",
+            difficulty="easy",
+            base_points=0,
+            created_by=self.user,
+        )
+        with self.assertRaises(ValidationError):
+            chore.full_clean()
+
+        chore.base_points = MAX_CHORE_POINTS + 1
+        with self.assertRaises(ValidationError):
+            chore.full_clean()
 
 
 class ChoreCompletionServiceTests(TestCase):

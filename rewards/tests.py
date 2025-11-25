@@ -1,10 +1,11 @@
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 
 from core.models import User
 from households.models import Household, HouseholdMembership, UserScore, PointTransaction
-from rewards.models import Reward, RewardRedemption
+from rewards.models import Reward, RewardRedemption, MAX_REWARD_POINT_COST
 from rewards.services import (
     request_redemption,
     approve_redemption,
@@ -42,6 +43,21 @@ class RewardModelTests(TestCase):
                     quantity_remaining=10,
                     created_by=self.user,
                 )
+
+    def test_point_cost_clean_validates_range(self):
+        reward = Reward(
+            household=self.household,
+            title="Zero Cost Reward",
+            point_cost=0,
+            category="activity",
+            created_by=self.user,
+        )
+        with self.assertRaises(ValidationError):
+            reward.full_clean()
+
+        reward.point_cost = MAX_REWARD_POINT_COST + 1
+        with self.assertRaises(ValidationError):
+            reward.full_clean()
 
 
 class RewardServiceTests(TestCase):

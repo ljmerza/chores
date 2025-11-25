@@ -1,7 +1,10 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from households.models import Household
+
+MAX_REWARD_POINT_COST = 100_000
 
 
 class Reward(models.Model):
@@ -128,6 +131,13 @@ class Reward(models.Model):
             return False
 
         return True
+
+    def clean(self):
+        super().clean()
+        if self.point_cost <= 0:
+            raise ValidationError({'point_cost': "Point cost must be greater than zero."})
+        if self.point_cost > MAX_REWARD_POINT_COST:
+            raise ValidationError({'point_cost': f"Point cost cannot exceed {MAX_REWARD_POINT_COST}."})
 
     @property
     def is_low_stock(self):

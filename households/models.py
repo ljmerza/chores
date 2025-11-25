@@ -202,6 +202,12 @@ class PointTransaction(models.Model):
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['household', 'created_at']),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(balance_after__gte=0),
+                name='point_transaction_balance_after_gte_0',
+            ),
+        ]
 
     def __str__(self):
         sign = '+' if self.amount >= 0 else ''
@@ -245,6 +251,16 @@ class Leaderboard(models.Model):
         indexes = [
             models.Index(fields=['household', 'period']),
             models.Index(fields=['household', 'period', 'rank']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(points__gte=0)
+                    & models.Q(chores_completed__gte=0)
+                    & models.Q(rank__gte=0)
+                ),
+                name='leaderboard_non_negative_fields',
+            ),
         ]
 
     def __str__(self):

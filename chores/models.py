@@ -1,6 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from households.models import Household
+
+MAX_CHORE_POINTS = 100_000
 
 
 class ChoreTemplate(models.Model):
@@ -147,6 +150,13 @@ class Chore(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.household.name})"
+
+    def clean(self):
+        super().clean()
+        if self.base_points <= 0:
+            raise ValidationError({'base_points': "Points must be greater than zero."})
+        if self.base_points > MAX_CHORE_POINTS:
+            raise ValidationError({'base_points': f"Points cannot exceed {MAX_CHORE_POINTS}."})
 
 
 class ChoreRotation(models.Model):
