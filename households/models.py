@@ -16,6 +16,11 @@ class Household(models.Model):
     """
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
+    timezone = models.CharField(
+        max_length=50,
+        default=settings.TIME_ZONE,
+        help_text="IANA timezone used to schedule reminders (e.g., America/New_York).",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -94,6 +99,43 @@ class HouseholdMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.household.name} ({self.role})"
+
+
+class ReminderSchedule(models.Model):
+    """
+    Per-user reminder schedule within a household (admin-managed).
+    Stores one send time per day as HH:MM 24h strings.
+    """
+    household = models.ForeignKey(
+        Household,
+        on_delete=models.CASCADE,
+        related_name='reminder_schedules',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reminder_schedules',
+    )
+    per_day_time = models.JSONField(default=dict, blank=True)
+    active = models.BooleanField(default=True)
+    default_channel_order = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_reminder_schedules',
+    )
+
+    class Meta:
+        db_table = 'reminder_schedules'
+        unique_together = [['household', 'user']]
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.user} - {self.household.name} reminder schedule"
 
 
 class UserScore(models.Model):

@@ -1,9 +1,9 @@
 # Household Chore Reminder Scheduling Plan
 
-Plan for allowing household admins to choose when each member gets notified about due chores on each day of the week. Focus is on predictable digests tied to local time, with guardrails for spam and overdue catch-up.
+Plan for allowing household admins (only) to choose when each member gets notified about due chores on each day of the week. Focus is on predictable digests tied to local time, with guardrails for spam and overdue catch-up.
 
 ## Goals & Scope
-- Admins configure per-user schedules (day-of-week -> one or more times) for chore due reminders.
+- Admins configure per-user schedules (day-of-week -> exactly one time) for chore due reminders.
 - Reminders summarize chores due soon/overdue for that user within the household; avoid spamming outside configured times.
 - Respect household/user time zones and existing reminder cooldown/quiet-hour knobs.
 - Phase 1 excludes ad-hoc one-off overrides, cross-household bulk edits, and non-chore notification types.
@@ -14,11 +14,17 @@ Plan for allowing household admins to choose when each member gets notified abou
 - Default behavior: if no schedule exists for a member, fall back to the current immediate scan (`scan_due_items`) to avoid regressions.
 - Channel delivery still flows through `core.reminders.dispatch_reminder`; schedule only gates when we call it.
 
+## Defaults & Backfill Plan
+- Default send time: 18:00 local time for all days.
+- New households: auto-create a `ReminderSchedule` for each member (and for members added later) with 18:00 on all days, active=true.
+- Existing households: data migration/backfill to set `Household.timezone` to `settings.TIME_ZONE` when empty and create schedules for current members using the 18:00 default; skip households with explicit schedules if any exist.
+- Admins can edit or disable per-member schedules after the default is created; no member self-serve.
+
 ## Data Model Changes
 - `Household.timezone` (CharField, default to settings.TIME_ZONE) to anchor schedule evaluation.
 - `ReminderSchedule` (new model, likely in `households` or `core`):
   - `household` FK, `user` FK (unique together).
-  - `per_day_times` JSON: `{"mon":["08:00","18:00"], "tue":[...], ...}` storing 24h HH:MM strings; empty list = no send that day.
+  - `per_day_time` JSON: `{"mon":"18:00", "tue":"18:00", ...}` storing one 24h HH:MM string per day; null/missing = no send that day.
   - `active` boolean, `default_channel_order` optional list to override `preferred_channels`.
   - Audit fields (`created_at/updated_at`, `created_by` admin FK).
 - Optional future: `ReminderSendLog` or reuse `Notification` for last-sent tracking; for now leverage cooldown + in-memory windowing.
@@ -37,11 +43,11 @@ Plan for allowing household admins to choose when each member gets notified abou
 
 ## Admin & UI Surfaces
 - Household admin-only page (Admin Hub > Notifications):
-  - Table of members with per-day time pickers (multi-select) and copy-from-template buttons (e.g., "School nights", "Weekends").
-  - Toggle to enable/disable schedule per member; inline validation for time format and duplicates.
+  - Table of members with per-day single time pickers (no multi-select) and copy-from-template buttons (e.g., "School nights", "Weekends").
+  - Toggle to enable/disable schedule per member; inline validation for time format.
   - Preview of effective timezone and link to change household timezone.
-- Optional: simple defaults button to set morning/evening times for all members.
-- No user self-serve edits in phase 1; members view-only in profile.
+- Optional: simple defaults button to set one daily time for all members.
+- No user self-serve edits in phase 1; members view-only in profile. Admin-only control is enforced in views/forms.
 
 ## API/Service Layer
 - Service helpers in `core/services/notifications.py` to:
@@ -59,7 +65,7 @@ Plan for allowing household admins to choose when each member gets notified abou
 
 ## Implementation Steps
 1) Add models/migration for `Household.timezone` and `ReminderSchedule`; update admin + forms.
-2) Seed defaults: when creating a household, create schedules with a single daily time (e.g., 6pm) for all members; script to backfill existing households.
+2) Seed defaults: when creating a household, create schedules with a single daily time (18:00) for all members; add signals/hooks to create schedules for new members; data migration to backfill existing households/members with the default schedule.
 3) Build service helpers to read schedules, resolve tz, and fetch due/overdue chores for a window.
 4) Implement Celery task `send_scheduled_chore_digests`; wire into beat (every 5 min) and add tests for schedule matching, cooldown, and tz handling.
 5) Update `scan_due_items` to skip users with active schedules; ensure overdue expiry logic still runs.
@@ -68,6 +74,6 @@ Plan for allowing household admins to choose when each member gets notified abou
 8) Update docs (`README`, `REMINDER_NOTES`) to describe schedules, defaults, and env knobs.
 
 ## Open Questions
-- Should users be allowed to request their own schedule (pending admin approval), or admin-only forever?
-- Limit number of send times per day (e.g., max 4) to prevent spam?
+- Admin-only control is confirmed; no member edits.
+- One send time per day is fixed; no multi-send per day.
 - Do we need separate schedules for children vs members, or a template system for bulk apply?

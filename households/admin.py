@@ -1,14 +1,19 @@
 from django.contrib import admin
 from .models import (
-    Household, HouseholdMembership, UserScore,
-    PointTransaction, Leaderboard, StreakBonus
+    Household,
+    HouseholdMembership,
+    ReminderSchedule,
+    UserScore,
+    PointTransaction,
+    Leaderboard,
+    StreakBonus,
 )
 
 
 @admin.register(Household)
 class HouseholdAdmin(admin.ModelAdmin):
-    list_display = ['name', 'created_by', 'invite_code', 'created_at']
-    list_filter = ['created_at']
+    list_display = ['name', 'created_by', 'invite_code', 'timezone', 'created_at']
+    list_filter = ['created_at', 'timezone']
     search_fields = ['name', 'invite_code']
     readonly_fields = ['invite_code', 'created_at', 'updated_at']
 
@@ -18,6 +23,14 @@ class HouseholdMembershipAdmin(admin.ModelAdmin):
     list_display = ['user', 'household', 'role', 'joined_at']
     list_filter = ['role', 'joined_at']
     search_fields = ['user__email', 'household__name']
+
+
+@admin.register(ReminderSchedule)
+class ReminderScheduleAdmin(admin.ModelAdmin):
+    list_display = ['user', 'household', 'active', 'updated_at']
+    list_filter = ['active', 'household']
+    search_fields = ['user__email', 'household__name']
+    readonly_fields = ['created_at', 'updated_at']
 
 
 @admin.register(UserScore)
