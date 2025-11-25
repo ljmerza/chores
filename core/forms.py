@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from households.models import Household
 from .models import User
@@ -176,3 +177,51 @@ AdditionalAccountFormSet = forms.formset_factory(
     max_num=8,
     validate_max=True
 )
+
+
+class LoginForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': TAILWIND_INPUT_CLASS,
+            'placeholder': 'you@example.com'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': TAILWIND_INPUT_CLASS,
+            'placeholder': 'Your password'
+        })
+    )
+    remember_me = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary'
+        })
+    )
+
+    error_messages = {
+        'invalid_login': "We couldn't find an account with that email/password.",
+        'inactive': "This account is inactive.",
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._user = None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get('email')
+        password = cleaned_data.get('password')
+
+        if email and password:
+            self._user = authenticate(email=email, password=password)
+            if self._user is None:
+                raise forms.ValidationError(self.error_messages['invalid_login'])
+            if not self._user.is_active:
+                raise forms.ValidationError(self.error_messages['inactive'])
+
+        return cleaned_data
+
+    def get_user(self):
+        return self._user

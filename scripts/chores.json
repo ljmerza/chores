@@ -1,0 +1,468 @@
+[
+      {
+            "entity_id": "mow_lawn_chore",
+            "days": 21,
+            "enabledMonths": [
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+            ]
+      },
+      {
+            "entity_id": "clean_out_trash_cans_chore",
+            "days": 360
+      },
+      {
+            "entity_id": "clean_lawn_robots_chore",
+            "days": 30,
+            "enabledMonths": [
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+            ]
+      },
+      {
+            "entity_id": "outdoor_plant_feed_chore",
+            "days": 30,
+            "enabledMonths": [
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+            ]
+      },
+      {
+            "entity_id": "recalculate_budget_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "upstairs_trash_cans_empty_chore",
+            "days": 21
+      },
+      {
+            "entity_id": "deep_clean_litterbox_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "flush_brake_fluid_chore",
+            "days": 730
+      },
+      {
+            "entity_id": "flush_radiator_fluid_chore",
+            "days": 1095
+      },
+      {
+            "entity_id": "hvac_filter_change_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "dishwasher_cleaned_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "dryer_lint_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "flip_matress_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "animal_teeth_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "dog_heartworm_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "check_attic_crawlspace_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "water_bowls_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "robots_cleaned_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "nook_chairs_swapped_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "cat_litter_cleaned_chore",
+            "days": 14
+      },
+      {
+            "entity_id": "dog_bath_chore",
+            "days": 14
+      },
+      {
+            "entity_id": "flea_meds_chore",
+            "message": "Animals need flea meds",
+            "days": 30
+      },
+      {
+            "entity_id": "microwave_filter_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "ro_1236_chore",
+            "message": "RO filters stages 1, 2, 3, and 6 replace.",
+            "days": 365
+      },
+      {
+            "entity_id": "ro_4_chore",
+            "message": "RO filter stage 4 replace",
+            "days": 730
+      },
+      {
+            "entity_id": "deep_clean_couches_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "ro_5_chore",
+            "message": "RO filter stage 5 replace",
+            "days": 1460
+      },
+      {
+            "entity_id": "air_purifier_filters_chore",
+            "message": "Air purifiers cleaning",
+            "days": 60
+      },
+      {
+            "entity_id": "air_purifier_filters_replace_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "clean_fridge_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "deer_repellant_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "sharpen_knives_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "oil_cutting_board_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "clean_dish_drying_area_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "deep_clean_cabinets_chore",
+            "days": 60
+      },
+      {
+            "entity_id": "deep_clean_carpets_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "dog_poop_chore",
+            "days": 14
+      },
+      {
+            "entity_id": "water_living_room_plants_chore",
+            "days": 30
+      },
+      {
+            "entity_id": "fridge_filter_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "inspect_garage_doors_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "deep_clean_stove_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "test_water_shutoff_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "pressure_wash_house_chore",
+            "days": 730
+      },
+      {
+            "entity_id": "deep_clean_water_heater_chore",
+            "days": 730
+      },
+      {
+            "entity_id": "reseal_grout_chore",
+            "days": 730
+      },
+      {
+            "entity_id": "fence_restain_chore",
+            "days": 1095,
+            "enabledMonths": [
+                  3,
+                  4,
+                  5,
+                  6
+            ]
+      },
+      {
+            "entity_id": "hvac_duct_cleaning_chore",
+            "days": 1095
+      },
+      {
+            "entity_id": "test_gfcis_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "check_fire_extinguighers_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "clean_windows_chore",
+            "days": 365,
+            "enabledMonths": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+            ]
+      },
+      {
+            "entity_id": "dust_clean_electronics_chore",
+            "days": 182.5
+      },
+      {
+            "entity_id": "deep_clean_washing_machine_chore",
+            "days": 180
+      },
+      {
+            "entity_id": "animals_vet_appointment_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "rotate_car_tires_chore",
+            "days": 182.5
+      },
+      {
+            "entity_id": "check_car_dashcams_chore",
+            "days": 182.5
+      },
+      {
+            "entity_id": "change_car_filter_chore",
+            "days": 365
+      },
+      {
+            "entity_id": "change_car_oil_chore",
+            "days": 182.5
+      },
+      {
+            "entity_id": "pull_weeds_chore",
+            "days": 30,
+            "enabledMonths": [
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10
+            ]
+      },
+      {
+            "entity_id": "switch_fan_direction_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4,
+                  11
+            ]
+      },
+      {
+            "entity_id": "amazon_subscription_chore",
+            "monthly": true
+      },
+      {
+            "entity_id": "spring_clean_garage_office_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  5
+            ]
+      },
+      {
+            "entity_id": "trim_bushes_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  11
+            ]
+      },
+      {
+            "entity_id": "power_wash_concrete_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  6
+            ]
+      },
+      {
+            "entity_id": "setup_irrigation_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4
+            ]
+      },
+      {
+            "entity_id": "pre_emergent_lawn_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  3
+            ]
+      },
+      {
+            "entity_id": "lawn_fertilizer_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  3,
+                  5,
+                  9,
+                  11
+            ]
+      },
+      {
+            "entity_id": "crab_grass_preventer_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  6
+            ]
+      },
+      {
+            "entity_id": "overseed_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  9
+            ]
+      },
+      {
+            "entity_id": "mulch_yard_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  5
+            ]
+      },
+      {
+            "entity_id": "clean_gutters_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  5,
+                  11
+            ]
+      },
+      {
+            "entity_id": "inspect_landscape_bricks_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4
+            ]
+      },
+      {
+            "entity_id": "inspect_caulk_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4
+            ]
+      },
+      {
+            "entity_id": "inspect_shingles_gutters_siding_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  3,
+                  9
+            ]
+      },
+      {
+            "entity_id": "spray_insect_barrier_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  5,
+                  8
+            ]
+      },
+      {
+            "entity_id": "insulate_doors_windows_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  10
+            ]
+      },
+      {
+            "entity_id": "lawn_mower_setup_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4
+            ]
+      },
+      {
+            "entity_id": "winterize_outdoor_equipment_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  11
+            ]
+      },
+      {
+            "entity_id": "clean_ac_drip_line_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  4
+            ]
+      },
+      {
+            "entity_id": "deep_clean_sinks_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  6,
+                  12
+            ]
+      },
+      {
+            "entity_id": "empty_dehumidifier_chore",
+            "monthly": true,
+            "enabledMonths": [
+                  11
+            ]
+      },
+      {
+            "entity_id": "update_devices_chore",
+            "message": "servers, dashboards, esphomes need updating.",
+            "days": 30,
+            "user": "ljmerza@gmail.com"
+      },
+      {
+            "entity_id": "megan_clean_makeup_brushes_chore",
+            "message": "Makeup brushes need to be cleaned.",
+            "days": 30,
+            "user": "meganrhayworth@gmail.com"
+      },
+      {
+            "entity_id": "leo_docter_chore",
+            "message": "Yearly docter appointment due.",
+            "days": 365,
+            "user": "ljmerza@gmail.com"
+      },
+      {
+            "entity_id": "megan_docter_chore",
+            "message": "Yearly docter appointment due.",
+            "days": 365,
+            "user": "meganrhayworth@gmail.com"
+      }
+]

@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
 from core.models import User
@@ -11,7 +12,7 @@ from .forms import CreateChoreForm
 
 class CreateChoreView(LoginRequiredMixin, TemplateView):
     template_name = 'chores/create_chore.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -96,7 +97,7 @@ class CreateChoreView(LoginRequiredMixin, TemplateView):
 
 class EditChoreView(LoginRequiredMixin, TemplateView):
     template_name = 'chores/create_chore.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, pk, *args, **kwargs):
         self.chore = get_object_or_404(Chore, pk=pk)
@@ -181,7 +182,7 @@ class EditChoreView(LoginRequiredMixin, TemplateView):
 
 class ManageChoresView(LoginRequiredMixin, TemplateView):
     template_name = 'chores/manage.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         self.households = self._household_queryset()

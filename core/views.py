@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
@@ -8,13 +8,14 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from .models import User
 from households.models import Household, HouseholdMembership, UserScore
 from chores.models import Chore, Notification
 from rewards.models import Reward
 from rewards.services import request_redemption, RewardError
-from .forms import InviteSignupForm, SetupWizardForm, AdditionalAccountFormSet
+from .forms import InviteSignupForm, SetupWizardForm, AdditionalAccountFormSet, LoginForm
 
 
 class SetupWizardView(TemplateView):
@@ -70,7 +71,7 @@ class SetupWizardView(TemplateView):
 
 class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
     template_name = 'core/setup_wizard_members.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         self.household_id = request.session.get('setup_household_id')
@@ -304,6 +305,52 @@ class HomeView(TemplateView):
         return context
 
 
+class LoginView(TemplateView):
+    template_name = 'core/login.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not User.objects.exists():
+            return redirect('setup_wizard')
+
+        if request.user.is_authenticated:
+            next_url = request.GET.get('next')
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = kwargs.get('form') or LoginForm()
+        context['next'] = self.request.GET.get('next')
+        return context
+
+    def post(self, request):
+        form = LoginForm(request.POST)
+        next_url = request.POST.get('next') or request.GET.get('next')
+
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+
+            if not form.cleaned_data.get('remember_me'):
+                request.session.set_expiry(0)
+
+            target = next_url if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure()
+            ) else reverse('home')
+
+            messages.success(request, "Welcome back! You're signed in.")
+            return redirect(target)
+
+        context = self.get_context_data(form=form)
+        context['next'] = next_url
+        return render(request, self.template_name, context)
+
+
 class InviteSignupView(TemplateView):
     template_name = 'core/invite.html'
 
@@ -352,6 +399,12 @@ class InviteSignupView(TemplateView):
 
 def _ensure_membership(user, household):
     return HouseholdMembership.objects.filter(household=household, user=user).exists()
+
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, "You have been logged out.")
+    return redirect('login')
 
 
 @login_required

@@ -32,6 +32,14 @@ MONTH_CHOICES = [
     ('9', 'Sep'), ('10', 'Oct'), ('11', 'Nov'), ('12', 'Dec'),
 ]
 
+MONTHLY_MODE_CHOICES = [
+    ('day', 'On day of month'),
+    ('weekday', 'On weekday pattern'),
+    ('from_completion', 'From last completion (no fixed date)'),
+]
+
+DEFAULT_RECURRENCE_ANCHOR = 'completion'
+
 
 class CreateChoreForm(forms.Form):
     title = forms.CharField(
@@ -103,8 +111,9 @@ class CreateChoreForm(forms.Form):
         widget=forms.NumberInput(attrs={'class': TAILWIND_INPUT_CLASS})
     )
     monthly_mode = forms.ChoiceField(
-        choices=[('day', 'On day of month'), ('weekday', 'On weekday pattern')],
+        choices=MONTHLY_MODE_CHOICES,
         initial='day',
+        required=False,
         widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
     )
     week_of_month = forms.ChoiceField(
@@ -183,7 +192,7 @@ class CreateChoreForm(forms.Form):
                 self.fields['monthly_mode'].initial = mode
                 if mode == 'day':
                     self.fields['day_of_month'].initial = data.get('day_of_month')
-                else:
+                elif mode == 'weekday':
                     self.fields['week_of_month'].initial = data.get('week_of_month')
                     self.fields['weekday_of_month'].initial = data.get('weekday_of_month')
 
@@ -234,7 +243,7 @@ class CreateChoreForm(forms.Form):
         if interval and interval < 1:
             self.add_error('interval_value', 'Interval must be at least 1.')
 
-        recurrence_data = {'interval': interval}
+        recurrence_data = {'interval': interval, 'anchor': DEFAULT_RECURRENCE_ANCHOR}
 
         if frequency == 'daily':
             cleaned['recurrence_pattern'] = 'daily'
@@ -245,18 +254,23 @@ class CreateChoreForm(forms.Form):
 
         elif frequency == 'monthly':
             mode = cleaned.get('monthly_mode') or 'day'
-            recurrence_data['monthly_mode'] = mode
-            if mode == 'day':
-                day = cleaned.get('day_of_month')
+            day = cleaned.get('day_of_month')
+            wom = cleaned.get('week_of_month')
+            wom_day = cleaned.get('weekday_of_month')
+            no_anchor_selected = not day and not wom and not wom_day
+
+            if mode == 'from_completion' or no_anchor_selected:
+                recurrence_data['monthly_mode'] = 'from_completion'
+            elif mode == 'day':
                 if not day:
                     self.add_error('day_of_month', 'Pick a day of the month.')
+                recurrence_data['monthly_mode'] = 'day'
                 recurrence_data['day_of_month'] = day
             else:
-                wom = cleaned.get('week_of_month')
-                wom_day = cleaned.get('weekday_of_month')
                 if not wom or not wom_day:
                     self.add_error('week_of_month', 'Pick which week of the month.')
                     self.add_error('weekday_of_month', 'Pick a weekday.')
+                recurrence_data['monthly_mode'] = 'weekday'
                 recurrence_data['week_of_month'] = wom
                 recurrence_data['weekday_of_month'] = wom_day
             cleaned['recurrence_pattern'] = 'monthly'

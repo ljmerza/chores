@@ -5,15 +5,32 @@
                class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Chore Manager
             </a>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
                 {% if user.is_authenticated %}
-                    <span class="text-gray-300">Hi, {{ user.full_name }}!</span>
-                    <a href="/admin/"
-                       class="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                        Admin
+                    <a href="{% url 'redeem_rewards' %}"
+                       class="hidden sm:inline-flex items-center px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-white font-semibold hover:bg-white/15 transition">
+                        Rewards
                     </a>
+                    <span class="text-gray-300 hidden sm:inline">Hi, {{ user.full_name }}!</span>
+                    {% if user.is_staff %}
+                        <a href="/admin/"
+                           class="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                            Admin
+                        </a>
+                    {% endif %}
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-secondary transition-colors">
+                            Logout
+                        </button>
+                    </form>
                 {% else %}
-                    <a href="/admin/"
+                    <a href="{% url 'invite_signup' %}"
+                       class="text-gray-200 px-3 py-2 rounded-lg font-semibold hover:text-white">
+                        Join household
+                    </a>
+                    <a href="{% url 'login' %}"
                        class="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                         Login
                     </a>

@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from core.models import User
 from .forms import HouseholdDetailsForm, InviteMemberForm
@@ -11,7 +11,7 @@ from .models import Household, HouseholdMembership, UserScore
 
 class ManageHouseholdView(LoginRequiredMixin, TemplateView):
     template_name = 'households/manage.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         self.households = self._household_queryset()

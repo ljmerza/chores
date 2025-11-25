@@ -2,17 +2,17 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import F, Q
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
-from households.models import Household, HouseholdMembership
+from households.models import Household, HouseholdMembership, UserScore
 from .forms import RewardForm
 from .models import Reward
 
 
 class CreateRewardView(LoginRequiredMixin, TemplateView):
     template_name = 'rewards/create_reward.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -96,7 +96,7 @@ class CreateRewardView(LoginRequiredMixin, TemplateView):
 
 class EditRewardView(LoginRequiredMixin, TemplateView):
     template_name = 'rewards/create_reward.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, pk, *args, **kwargs):
         self.reward = get_object_or_404(Reward, pk=pk)
@@ -194,7 +194,7 @@ class EditRewardView(LoginRequiredMixin, TemplateView):
 
 class ManageRewardsView(LoginRequiredMixin, TemplateView):
     template_name = 'rewards/manage.html'
-    login_url = '/admin/login/'
+    login_url = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         self.households = self._household_queryset()
@@ -307,5 +307,125 @@ class ManageRewardsView(LoginRequiredMixin, TemplateView):
             'search_query': search_query,
             'visible_count': rewards_qs.count(),
             'counts': counts,
+        })
+        return context
+
+
+class RedeemRewardsView(LoginRequiredMixin, TemplateView):
+    template_name = 'rewards/redeem.html'
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.households = self._household_queryset()
+        if not self.households.exists():
+            messages.error(request, "Join or create a household to view rewards.")
+            return redirect('home')
+
+        self.selected_household = self._selected_household()
+        if not self.selected_household:
+            messages.error(request, "Select a household to view rewards.")
+            return redirect('home')
+
+        if not self._is_member(request.user, self.selected_household):
+            messages.error(request, "You need to be part of this household to redeem rewards.")
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def _household_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Household.objects.all()
+        return Household.objects.filter(memberships__user=user).distinct()
+
+    def _selected_household(self):
+        requested = self.request.GET.get('household')
+        if requested:
+            return self.households.filter(id=requested).first()
+        return self.households.first()
+
+    def _is_member(self, user, household):
+        return (
+            HouseholdMembership.objects.filter(household=household, user=user).exists()
+            or user.is_staff
+            or user.role == 'admin'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        selected = self.selected_household
+        status_filter = self.request.GET.get('status') or 'active'
+        availability_filter = self.request.GET.get('availability') or 'available'
+        category_filter = self.request.GET.get('category') or 'all'
+        search_query = (self.request.GET.get('q') or '').strip()
+
+        now = timezone.now()
+        rewards_qs = Reward.objects.filter(household=selected)
+
+        if status_filter != 'all':
+            rewards_qs = rewards_qs.filter(is_active=(status_filter == 'active'))
+
+        if category_filter != 'all':
+            rewards_qs = rewards_qs.filter(category=category_filter)
+
+        if availability_filter == 'available':
+            rewards_qs = rewards_qs.filter(
+                is_active=True,
+            ).filter(
+                Q(available_from__isnull=True) | Q(available_from__lte=now),
+                Q(available_until__isnull=True) | Q(available_until__gte=now),
+            ).filter(Q(quantity_remaining__isnull=True) | Q(quantity_remaining__gt=0))
+        elif availability_filter == 'low_stock':
+            rewards_qs = rewards_qs.filter(
+                low_stock_threshold__isnull=False,
+                quantity_remaining__isnull=False,
+                quantity_remaining__lte=F('low_stock_threshold')
+            )
+
+        if search_query:
+            rewards_qs = rewards_qs.filter(
+                Q(title__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(instructions__icontains=search_query)
+                | Q(tags__icontains=search_query)
+            )
+
+        rewards_qs = rewards_qs.order_by('-is_active', 'point_cost', 'title')
+
+        base_qs = Reward.objects.filter(household=selected)
+        counts = {
+            'total': base_qs.count(),
+            'active': base_qs.filter(is_active=True).count(),
+            'inactive': base_qs.filter(is_active=False).count(),
+            'available': base_qs.filter(
+                is_active=True,
+            ).filter(
+                Q(available_from__isnull=True) | Q(available_from__lte=now),
+                Q(available_until__isnull=True) | Q(available_until__gte=now),
+            ).filter(Q(quantity_remaining__isnull=True) | Q(quantity_remaining__gt=0)).count(),
+            'low_stock': base_qs.filter(
+                low_stock_threshold__isnull=False,
+                quantity_remaining__isnull=False,
+                quantity_remaining__lte=F('low_stock_threshold')
+            ).count(),
+        }
+
+        user_score = UserScore.objects.filter(
+            user=self.request.user,
+            household=selected
+        ).first()
+
+        context.update({
+            'households': self.households,
+            'selected_household': selected,
+            'rewards': rewards_qs,
+            'category_choices': Reward.CATEGORY_CHOICES,
+            'status_filter': status_filter,
+            'category_filter': category_filter,
+            'availability_filter': availability_filter,
+            'search_query': search_query,
+            'visible_count': rewards_qs.count(),
+            'counts': counts,
+            'user_score': user_score,
         })
         return context

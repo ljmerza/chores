@@ -32,21 +32,21 @@ Working notes to ramp up quickly on the Chore Manager project. Covers what the a
 - `households/`: `Household` (unique invite codes), `HouseholdMembership`, `UserScore`, `PointTransaction`, `Leaderboard`. Check constraints enforce non-negative scores and balance.
 - `chores/`: `ChoreTemplate`, `Chore` (assignment types, recurrence fields, priority, verification flags), `ChoreRotation`, `ChoreInstance` (status tracking, photos, due dates), `ChoreTransfer`, `Notification`.
 - `rewards/`: `Reward` (stock, availability windows, per-user limits, approval flags, tags, images) and `RewardRedemption` (pending/approved/denied/fulfilled/cancelled with audit fields).
-- Templates: shared components in `templates/components/` (buttons, badges, alerts, cards, etc.) documented in `PLANNING.md`.
+- Templates: shared components in `templates/components/` (buttons, badges, alerts, cards, etc.) documented in `docs/PLANNING.md`.
 - Tests: service and model guards live in `core/tests.py` and `chores/tests.py` (points invariants, completion flow).
 - Scripts: `scripts/seed_demo_data.sh` runs `manage.py seed_demo_data` inside Docker or locally.
 
 ## Planning & reference docs
 - `README.md`: high-level features, stack, quick start, project tree, and model list.
-- `PLANNING.md`: component catalogue (`templates/components/*`), feature overview, and a full schema outline with future ideas.
-- `SERVICES.md`: explains the service-layer modules and current tests.
-- `CHORE_DUE_RULES.md`: recurrence data shape for generating chore due dates, including monthly/nth-weekday rules and month filters.
-- `REMINDER_NOTES.md`: Celery-driven reminder design, channel data needs, env knobs, and implementation checklist for `core/reminders.py`.
-- `REWARDS_PLAN.md`: roadmap for hardening rewards (stock races, approvals, limits), planned `services/rewards.py`, notifications, and tests.
-- `IMPROVEMENT_PLAN.md`: backlog of invariants/indexes, DRF API/auth hardening, Celery scheduling, DX/CI items, and setup flow tightening.
+- `docs/PLANNING.md`: component catalogue (`templates/components/*`), feature overview, and a full schema outline with future ideas.
+- `docs/SERVICES.md`: explains the service-layer modules and current tests.
+- `docs/CHORE_DUE_RULES.md`: recurrence data shape for generating chore due dates, including monthly/nth-weekday rules and month filters.
+- `docs/REMINDER_NOTES.md`: Celery-driven reminder design, channel data needs, env knobs, and implementation checklist for `core/reminders.py`.
+- `docs/REWARDS_PLAN.md`: roadmap for hardening rewards (stock races, approvals, limits), planned `services/rewards.py`, notifications, and tests.
+- `docs/IMPROVEMENT_PLAN.md`: backlog of invariants/indexes, DRF API/auth hardening, Celery scheduling, DX/CI items, and setup flow tightening.
 
 ## Known gaps and cautions
 - API endpoints lack authentication/authorization—treat everything as public until locked down.
 - Reminder dispatch and Celery scheduling are stubs; background jobs are not wired.
-- Tailwind uses CDN; production pipeline not configured (see `IMPROVEMENT_PLAN.md` for build/WhiteNoise/S3 ideas).
+- Tailwind uses CDN; production pipeline not configured (see `docs/IMPROVEMENT_PLAN.md` for build/WhiteNoise/S3 ideas).
 - Secrets: Docker defaults include an insecure `SECRET_KEY` and open `ALLOWED_HOSTS`; replace for any non-local use.
