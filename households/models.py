@@ -29,6 +29,10 @@ class Household(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    ha_base_url = models.URLField(blank=True, default='')
+    ha_token = models.CharField(max_length=255, blank=True, default='')
+    ha_default_target = models.CharField(max_length=150, blank=True, default='')
+    ha_verify_ssl = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'households'

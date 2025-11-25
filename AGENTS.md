@@ -13,14 +13,22 @@ Working notes to ramp up quickly on the Chore Manager project. Covers what the a
 - Django 5.2, Django REST Framework, Pillow (images), django-filter, django-cors-headers, python-decouple for env handling.
 - Optional UI helpers: django-crispy-forms + crispy-bootstrap5.
 - Databases: MySQL 8 by default (Docker), PostgreSQL and SQLite also work; `mysqlclient` and `psycopg2-binary` included.
-- Deployment/runtime: Gunicorn (prod), Docker + docker-compose. Future tasks commented in `requirements.txt` for Celery/Redis scheduling.
+- Deployment/runtime: Gunicorn (prod), Docker + docker-compose. Celery + Redis are wired for background tasks (worker, beat, Flower).
 - Frontend: Django templates with Tailwind CDN. Static/media volumes are mounted in Docker.
 
 ## How to run
 - Docker (default): `docker-compose up --build` then open the mapped port (see `docker-compose ps`; repo currently maps 9478 -> 8000). Auto-runs migrations. App starts in debug mode with permissive hosts and default secret key—replace for real deployments.
+- Celery/Redis: `docker-compose up` also starts `celery`, `celery-beat`, `flower`, and `redis`; Flower UI on `:5555`. Tasks scheduled via beat: `scan_due_items` and `generate_recurring_instances`.
 - Local: `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && cp .env.example .env`, configure DB env vars, run `python manage.py migrate` and `python manage.py runserver`. Always use the venv (or Docker); avoid mixing global Python installs.
 - Seed demo data: `./scripts/seed_demo_data.sh [--force]` (runs in Docker `web` service if present, otherwise locally). Demo users are created with password `demo1234`.
 - Stop/clean: `docker-compose down` (add `-v` to remove DB + volumes).
+- Local Celery (optional): `celery -A choremanager worker -l info` and `celery -A choremanager beat -l info` (requires Redis and env vars `CELERY_BROKER_URL`/`CELERY_RESULT_BACKEND`).
+
+## Helper scripts (`scripts/`)
+- `seed_demo_data.sh [--force]`: run `manage.py seed_demo_data` inside Docker if available, otherwise locally.
+- `makemigrations.sh [app_label...]`: run `manage.py makemigrations` in Docker `web` (exec/run) or fallback locally; pass app labels/args through.
+- `run_migrations.sh [args...]`: run `manage.py migrate` in Docker `web` (exec/run) or locally.
+- `chores.json`: sample cadence data (entity_id + interval/month filters) for external chore/reminder automation; not auto-imported.
 
 ## Code layout (core hotspots)
 - `choremanager/`: project settings/urls; Tailwind pulled via base template.
@@ -44,9 +52,10 @@ Working notes to ramp up quickly on the Chore Manager project. Covers what the a
 - `docs/REMINDER_NOTES.md`: Celery-driven reminder design, channel data needs, env knobs, and implementation checklist for `core/reminders.py`.
 - `docs/REWARDS_PLAN.md`: roadmap for hardening rewards (stock races, approvals, limits), planned `services/rewards.py`, notifications, and tests.
 - `docs/IMPROVEMENT_PLAN.md`: backlog of invariants/indexes, DRF API/auth hardening, Celery scheduling, DX/CI items, and setup flow tightening.
+- `docs/CELERY_PLAN.md`: notes on worker/beat/flower services, commands, and integration checks.
 
 ## Known gaps and cautions
 - API endpoints lack authentication/authorization—treat everything as public until locked down.
-- Reminder dispatch and Celery scheduling are stubs; background jobs are not wired.
+- Reminder delivery is partial: Home Assistant notify works when configured; email/SMS/push channels are still stubbed.
 - Tailwind uses CDN; production pipeline not configured (see `docs/IMPROVEMENT_PLAN.md` for build/WhiteNoise/S3 ideas).
 - Secrets: Docker defaults include an insecure `SECRET_KEY` and open `ALLOWED_HOSTS`; replace for any non-local use.

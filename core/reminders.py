@@ -9,7 +9,13 @@ Intended channels:
 """
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
 from typing import Any, Dict, List, Optional
+
+import requests
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ReminderChannel(str, Enum):
@@ -34,6 +40,10 @@ class ReminderTarget:
     phone_e164: Optional[str] = None
     homeassistant_target: Optional[str] = None  # e.g., notify.mobile_app_x
     push_subscription: Optional[Dict[str, Any]] = None  # web push payload
+    ha_base_url: Optional[str] = None
+    ha_token: Optional[str] = None
+    ha_default_target: Optional[str] = None
+    ha_verify_ssl: Optional[bool] = None
 
     # Control knobs
     cooldown_minutes: int = 60
@@ -68,8 +78,14 @@ def _resolve_channels(reminder: ReminderTarget) -> List[ReminderChannel]:
             available.append(channel)
         elif channel == ReminderChannel.SMS and reminder.phone_e164:
             available.append(channel)
-        elif channel == ReminderChannel.HOME_ASSISTANT and reminder.homeassistant_target:
-            available.append(channel)
+        elif channel == ReminderChannel.HOME_ASSISTANT:
+            target = (
+                reminder.homeassistant_target
+                or reminder.ha_default_target
+                or getattr(settings, "HA_DEFAULT_NOTIFY_TARGET", "")
+            )
+            if target:
+                available.append(channel)
         elif channel == ReminderChannel.PUSH and reminder.push_subscription:
             available.append(channel)
     return available
@@ -108,10 +124,64 @@ def send_sms(reminder: ReminderTarget) -> None:
 
 def send_homeassistant_notify(reminder: ReminderTarget) -> None:
     """
-    TODO: POST to Home Assistant /api/services/notify/<target>
-    - Requires base URL and long-lived token in settings/env.
+    Send a notification through Home Assistant's notify service.
+    Requires HA_BASE_URL, HA_LONG_LIVED_TOKEN, and a notify target (per-user or default).
     """
-    raise NotImplementedError("Home Assistant notify sending not implemented.")
+    base_url = (reminder.ha_base_url or getattr(settings, "HA_BASE_URL", "") or "").rstrip("/")
+    token = reminder.ha_token or getattr(settings, "HA_LONG_LIVED_TOKEN", "")
+    default_target = reminder.ha_default_target or getattr(settings, "HA_DEFAULT_NOTIFY_TARGET", "")
+
+    target = reminder.homeassistant_target or default_target
+    if not (base_url and token and target):
+        logger.info(
+            "Skipping Home Assistant notify: missing configuration (base_url/target/token). "
+            "user_id=%s household_id=%s",
+            reminder.user_id,
+            reminder.household_id,
+        )
+        return
+
+    url = f"{base_url}/api/services/notify/{target}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    payload: Dict[str, Any] = {
+        "message": reminder.message,
+        "title": reminder.subject or "Chore reminder",
+    }
+
+    data: Dict[str, Any] = {}
+    if reminder.action_link:
+        data["url"] = reminder.action_link
+    if reminder.due_at_iso:
+        data["when"] = reminder.due_at_iso
+    if data:
+        payload["data"] = data
+
+    verify_ssl = reminder.ha_verify_ssl
+    if verify_ssl is None:
+        verify_ssl = getattr(settings, "HA_VERIFY_SSL", True)
+
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=5, verify=verify_ssl)
+        response.raise_for_status()
+        logger.info(
+            "Sent Home Assistant notify to target=%s for user_id=%s household_id=%s status=%s",
+            target,
+            reminder.user_id,
+            reminder.household_id,
+            response.status_code,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Home Assistant notify failed target=%s user_id=%s household_id=%s error=%s",
+            target,
+            reminder.user_id,
+            reminder.household_id,
+            exc,
+        )
 
 
 def send_push(reminder: ReminderTarget) -> None:

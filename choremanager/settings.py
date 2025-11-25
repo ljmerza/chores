@@ -215,3 +215,9 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": timedelta(minutes=RECURRENCE_GENERATE_INTERVAL_MINUTES),
     },
 }
+
+# Home Assistant notifications (global fallback; per-household settings are preferred)
+HA_BASE_URL = config('HA_BASE_URL', default='')
+HA_LONG_LIVED_TOKEN = config('HA_LONG_LIVED_TOKEN', default='')
+HA_DEFAULT_NOTIFY_TARGET = config('HA_DEFAULT_NOTIFY_TARGET', default='')
+HA_VERIFY_SSL = config('HA_VERIFY_SSL', default=True, cast=bool)

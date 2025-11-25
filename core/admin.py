@@ -13,7 +13,7 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "role", "is_staff", "is_superuser", "is_active")
+        fields = ("username", "email", "first_name", "last_name", "role", "homeassistant_target", "is_staff", "is_superuser", "is_active")
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -37,7 +37,7 @@ class UserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("username", "email", "password", "first_name", "last_name", "role", "avatar", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")
+        fields = ("username", "email", "password", "first_name", "last_name", "role", "avatar", "homeassistant_target", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")
 
 
 @admin.register(User)
@@ -46,7 +46,7 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     model = User
 
-    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'is_staff', 'created_at']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'homeassistant_target', 'is_staff', 'created_at']
     list_filter = ['role', 'is_staff', 'is_superuser', 'is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering = ['-created_at']
@@ -55,6 +55,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'avatar', 'role')}),
+        ('Integrations', {'fields': ('homeassistant_target',)}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'created_at', 'updated_at')}),
     )
@@ -62,6 +63,6 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'first_name', 'last_name', 'role', 'avatar', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'role', 'avatar', 'homeassistant_target', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'),
         }),
     )

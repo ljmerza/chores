@@ -33,6 +33,78 @@
             {% endif %}
         </div>
 
+        <form method="post" class="bg-white rounded-2xl shadow-xl border border-gray-100">
+            {% csrf_token %}
+            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Home Assistant settings</h2>
+                    <p class="text-sm text-gray-500">Set per-household Home Assistant credentials and map members to notify targets.</p>
+                </div>
+                <div class="text-xs text-gray-500">
+                    Stored per household; env vars are fallback only.
+                </div>
+            </div>
+
+            <div class="p-5 border-b border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label for="{{ ha_settings_form.ha_base_url.id_for_label }}" class="text-sm text-gray-700">Home Assistant base URL</label>
+                    {{ ha_settings_form.ha_base_url }}
+                    <p class="text-xs text-gray-500">Example: http://homeassistant.local:8123</p>
+                </div>
+                <div class="space-y-2">
+                    <label for="{{ ha_settings_form.ha_default_target.id_for_label }}" class="text-sm text-gray-700">Default notify target</label>
+                    {{ ha_settings_form.ha_default_target }}
+                    <p class="text-xs text-gray-500">Used when a member target is blank.</p>
+                </div>
+                <div class="space-y-2">
+                    <label for="{{ ha_settings_form.ha_token.id_for_label }}" class="text-sm text-gray-700">Long-lived token</label>
+                    {{ ha_settings_form.ha_token }}
+                    <p class="text-xs text-gray-500">Stored on this household; keep tokens scoped.</p>
+                </div>
+                <div class="space-y-2 flex items-center gap-3">
+                    {{ ha_settings_form.ha_verify_ssl }}
+                    <label for="{{ ha_settings_form.ha_verify_ssl.id_for_label }}" class="text-sm text-gray-700">Verify SSL</label>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900">Member-to-target mapping</h3>
+                <p class="text-sm text-gray-500">Map household members to Home Assistant notify targets (e.g., <span class="font-mono">notify.mobile_app_jenny_phone</span>).</p>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                {% for membership, field in ha_rows %}
+                <div class="p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="space-y-1">
+                        <p class="text-sm font-semibold text-gray-900">{{ membership.user.display_name }}</p>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Role: {{ membership.get_role_display }}</p>
+                        <p class="text-xs text-gray-500">Leave blank to fall back to <span class="font-mono">HA_DEFAULT_NOTIFY_TARGET</span>.</p>
+                    </div>
+                    <div class="w-full lg:w-1/2">
+                        <label for="{{ field.id_for_label }}" class="text-sm text-gray-700">Notify target</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <p class="text-xs text-red-600 mt-1">{{ field.errors|striptags }}</p>
+                        {% else %}
+                            <p class="text-xs text-gray-500 mt-1">Example: <span class="font-mono">notify.mobile_app_jenny_phone</span></p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-gray-500 text-sm">
+                    No members found in this household.
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="px-5 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="text-sm text-gray-600">
+                    Uses Home Assistant notify service; messages include the notification title/message and optional link.
+                </div>
+                {% include 'components/button.html' with type="submit" label="Save mappings" size="sm" %}
+            </div>
+        </form>
+
         <div class="bg-white rounded-2xl shadow-xl border border-gray-100">
             <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>

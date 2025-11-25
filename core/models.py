@@ -63,6 +63,12 @@ class User(AbstractUser):
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    homeassistant_target = models.CharField(
+        max_length=150,
+        null=True,
+        blank=True,
+        help_text="Home Assistant notify target (e.g., notify.mobile_app_bobs_iphone)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

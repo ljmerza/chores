@@ -1,3 +1,5 @@
+from typing import Dict
+
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
@@ -276,3 +278,54 @@ class LoginForm(forms.Form):
 
     def get_user(self):
         return self._user
+
+
+class HomeAssistantTargetForm(forms.Form):
+    """
+    Edit per-user Home Assistant notify targets for a household.
+    """
+    FIELD_PREFIX = "ha_target"
+
+    def __init__(self, *args, users=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.users = users or []
+        for user in self.users:
+            field_name = self.field_name(user.id)
+            self.fields[field_name] = forms.CharField(
+                required=False,
+                max_length=150,
+                label=user.display_name,
+                widget=forms.TextInput(attrs={
+                    'class': TAILWIND_INPUT_CLASS,
+                    'placeholder': 'notify.mobile_app_your_device',
+                }),
+                help_text="Home Assistant notify service name",
+            )
+            if getattr(user, "homeassistant_target", None):
+                self.initial[field_name] = user.homeassistant_target
+
+    @classmethod
+    def field_name(cls, user_id: int) -> str:
+        return f"{cls.FIELD_PREFIX}_{user_id}"
+
+    def cleaned_targets(self) -> Dict[int, str]:
+        targets: Dict[int, str] = {}
+        for user in self.users:
+            raw = self.cleaned_data.get(self.field_name(user.id), "") or ""
+            targets[user.id] = raw.strip()
+        return targets
+
+
+class HomeAssistantSettingsForm(forms.ModelForm):
+    """
+    Household-level Home Assistant configuration (per-household).
+    """
+    class Meta:
+        model = Household
+        fields = ['ha_base_url', 'ha_token', 'ha_default_target', 'ha_verify_ssl']
+        widgets = {
+            'ha_base_url': forms.URLInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'http://homeassistant.local:8123'}),
+            'ha_token': forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Long-lived access token'}),
+            'ha_default_target': forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'notify.mobile_app_default'}),
+            'ha_verify_ssl': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary'}),
+        }

@@ -12,6 +12,7 @@ Goal: multi-channel reminders (email, SMS, Home Assistant notify, push) with Cel
 - Per-user contact fields: `email`, `phone_e164`, `homeassistant_target`, `push_subscription`.
 - Preferences: channel priority list, quiet hours, per-household opt-in/out.
 - Cooldown tracking: prevent duplicate reminders within N minutes per (user, chore_instance, type).
+- Home Assistant: per-household `ha_base_url`, `ha_token`, `ha_default_target` (set via Admin Hub > Notifications) and per-user `homeassistant_target`; optional env vars remain as fallbacks only.
 
 ## Task Flow (Celery, stub)
 1) Beat schedules `reminders.scan_due_instances` every 5–15 minutes.
