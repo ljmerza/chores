@@ -234,6 +234,7 @@ class ChoreInstance(models.Model):
         ordering = ['due_date', '-created_at']
         indexes = [
             models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['chore', 'status', 'due_date'], name='cinst_house_status_due_idx'),
             models.Index(fields=['status', 'assigned_to']),
         ]
 
