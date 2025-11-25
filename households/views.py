@@ -123,8 +123,9 @@ class ManageHouseholdView(LoginRequiredMixin, TemplateView):
             membership_role = 'admin' if data['role'] == 'admin' else 'member'
             with transaction.atomic():
                 user = User.objects.create_user(
+                    username=data['username'],
                     email=data['email'],
-                    password=data.get('password'),
+                    password=data.get('password') or None,
                     first_name=data.get('first_name'),
                     last_name=data.get('last_name', ''),
                     role=data.get('role') or 'member',
@@ -140,7 +141,7 @@ class ManageHouseholdView(LoginRequiredMixin, TemplateView):
                     defaults={'current_points': 0, 'lifetime_points': 0}
                 )
 
-            messages.success(request, f"{user.full_name or user.email} added to the household.")
+            messages.success(request, f"{user.full_name or user.username} added to the household.")
             return self._redirect_self()
 
         return self.render_to_response(self.get_context_data(invite_form=form))

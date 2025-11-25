@@ -26,12 +26,14 @@
 
                     {% include 'components/form_field.html' with label="Invite Code" field=form.invite_code errors=form.invite_code.errors for_id=form.invite_code.id_for_label help_text="Ask the household owner for their 8-character code." wrapper_classes="text-sm" %}
 
+                    {% include 'components/form_field.html' with label="Username" field=form.username errors=form.username.errors for_id=form.username.id_for_label help_text="You'll use this to sign in." wrapper_classes="text-sm" %}
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {% include 'components/form_field.html' with label="First Name" field=form.first_name errors=form.first_name.errors for_id=form.first_name.id_for_label wrapper_classes="text-sm" %}
                         {% include 'components/form_field.html' with label="Last Name" field=form.last_name errors=form.last_name.errors for_id=form.last_name.id_for_label wrapper_classes="text-sm" %}
                     </div>
 
-                    {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Use an email if you want to log in later or reset your password." wrapper_classes="text-sm" %}
+                    {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Add an email for notifications and password resets." wrapper_classes="text-sm" %}
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {% include 'components/form_field.html' with label="Password" field=form.password errors=form.password.errors for_id=form.password.id_for_label wrapper_classes="text-sm" %}

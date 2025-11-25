@@ -11,7 +11,7 @@ from households.models import Household
 
 class PointsServiceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="owner@example.com", password="pass")
+        self.user = User.objects.create_user(username="owner", email="owner@example.com", password="pass")
         self.household = Household.objects.create(name="Home", created_by=self.user)
 
     def test_award_points_updates_score_and_transaction(self):

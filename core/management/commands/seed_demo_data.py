@@ -67,19 +67,28 @@ class Command(BaseCommand):
         users = {}
         for definition in user_definitions:
             defaults = {
+                "username": definition["username"],
                 "first_name": definition["first_name"],
                 "last_name": definition["last_name"],
                 "role": definition["role"],
                 "is_staff": definition.get("is_staff", False),
                 "is_superuser": definition.get("is_superuser", False),
+                "email": definition["email"],
             }
-            user, created = User.objects.get_or_create(
-                email=definition["email"],
-                defaults=defaults,
-            )
-            if created:
-                user.set_password(DEFAULT_PASSWORD)
-                user.save()
+            user = User.objects.filter(username=definition["username"]).first()
+            if not user and definition["email"]:
+                user = User.objects.filter(email=definition["email"]).first()
+            if not user:
+                user = User.objects.create_user(
+                    username=definition["username"],
+                    email=definition["email"],
+                    password=DEFAULT_PASSWORD,
+                    first_name=definition["first_name"],
+                    last_name=definition["last_name"],
+                    role=definition["role"],
+                    is_staff=definition.get("is_staff", False),
+                    is_superuser=definition.get("is_superuser", False),
+                )
             else:
                 updates = []
                 for field, value in defaults.items():
@@ -88,6 +97,9 @@ class Command(BaseCommand):
                         updates.append(field)
                 if updates:
                     user.save(update_fields=updates)
+                if not user.has_usable_password():
+                    user.set_password(DEFAULT_PASSWORD)
+                    user.save(update_fields=["password"])
 
             users[definition["key"]] = user
 
@@ -97,6 +109,7 @@ class Command(BaseCommand):
         return [
             {
                 "key": "admin_one",
+                "username": "alex.admin",
                 "email": "alex.admin@example.com",
                 "first_name": "Alex",
                 "last_name": "Admin",
@@ -106,6 +119,7 @@ class Command(BaseCommand):
             },
             {
                 "key": "admin_two",
+                "username": "casey.captain",
                 "email": "casey.captain@example.com",
                 "first_name": "Casey",
                 "last_name": "Captain",
@@ -115,6 +129,7 @@ class Command(BaseCommand):
             },
             {
                 "key": "member_one",
+                "username": "morgan.member",
                 "email": "morgan.member@example.com",
                 "first_name": "Morgan",
                 "last_name": "Member",
@@ -122,6 +137,7 @@ class Command(BaseCommand):
             },
             {
                 "key": "member_two",
+                "username": "taylor.member",
                 "email": "taylor.member@example.com",
                 "first_name": "Taylor",
                 "last_name": "Member",
@@ -129,6 +145,7 @@ class Command(BaseCommand):
             },
             {
                 "key": "child_one",
+                "username": "riley.child",
                 "email": "riley.child@example.com",
                 "first_name": "Riley",
                 "last_name": "Child",
@@ -136,6 +153,7 @@ class Command(BaseCommand):
             },
             {
                 "key": "child_two",
+                "username": "jamie.child",
                 "email": "jamie.child@example.com",
                 "first_name": "Jamie",
                 "last_name": "Child",
@@ -144,10 +162,10 @@ class Command(BaseCommand):
         ]
 
     def _print_user_credentials(self, users):
-        self.stdout.write("Demo users (email / role):")
+        self.stdout.write("Demo users (username / email / role):")
         for definition in self._user_definitions():
             user = users[definition["key"]]
-            self.stdout.write(f"  - {user.email}  ({user.role})")
+            self.stdout.write(f"  - {user.username} / {user.email}  ({user.role})")
 
     def _create_household(self, created_by):
         household = Household.objects.create(

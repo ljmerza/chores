@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from core.forms import TAILWIND_INPUT_CLASS, TAILWIND_TEXTAREA_CLASS, TAILWIND_SELECT_CLASS
 from core.models import User
 from .models import Household
@@ -41,6 +42,11 @@ class InviteMemberForm(forms.Form):
         ('child', 'Child'),
     ]
 
+    username = forms.CharField(
+        max_length=150,
+        validators=[UnicodeUsernameValidator()],
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'username'})
+    )
     first_name = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'First name'})
@@ -51,7 +57,8 @@ class InviteMemberForm(forms.Form):
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Last name (optional)'})
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'member@email.com'})
+        required=False,
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'member@email.com (optional)'})
     )
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
@@ -69,9 +76,17 @@ class InviteMemberForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email=email).exists():
+        if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            raise forms.ValidationError("Username is required.")
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
 
     def clean_password(self):
         password = self.cleaned_data.get('password')

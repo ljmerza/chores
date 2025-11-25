@@ -16,7 +16,7 @@ from rewards.services import (
 
 class RewardModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="owner@example.com", password="pass")
+        self.user = User.objects.create_user(username="owner", email="owner@example.com", password="pass")
         self.household = Household.objects.create(name="Home", created_by=self.user)
 
     def test_quantity_remaining_defaults_to_available(self):
@@ -47,6 +47,7 @@ class RewardModelTests(TestCase):
 class RewardServiceTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
+            username="owner_admin",
             email="owner@example.com",
             password="pass",
             role="admin",
@@ -131,8 +132,8 @@ class RewardServiceTests(TestCase):
         self.assertEqual(self.score.current_points, 50)
 
     def test_allowed_members_gatekeeping(self):
-        allowed_user = User.objects.create_user(email="allowed@example.com", password="pass")
-        blocked_user = User.objects.create_user(email="blocked@example.com", password="pass")
+        allowed_user = User.objects.create_user(username="allowed_user", email="allowed@example.com", password="pass")
+        blocked_user = User.objects.create_user(username="blocked_user", email="blocked@example.com", password="pass")
         HouseholdMembership.objects.create(household=self.household, user=allowed_user, role="member")
         HouseholdMembership.objects.create(household=self.household, user=blocked_user, role="member")
         UserScore.objects.create(user=allowed_user, household=self.household, current_points=50, lifetime_points=50)
@@ -151,6 +152,7 @@ class RewardServiceTests(TestCase):
 class CreateRewardViewTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
+            username="owner_admin",
             email="owner@example.com",
             password="pass",
             role="admin",
@@ -169,7 +171,7 @@ class CreateRewardViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_member_cannot_load_create_reward(self):
-        member = User.objects.create_user(email="member@example.com", password="pass")
+        member = User.objects.create_user(username="member_user", email="member@example.com", password="pass")
         HouseholdMembership.objects.create(
             household=self.household,
             user=member,
@@ -200,7 +202,7 @@ class CreateRewardViewTests(TestCase):
         self.assertIsNone(reward.quantity_remaining)
 
     def test_blocked_user_does_not_see_restricted_reward(self):
-        blocked = User.objects.create_user(email="blocked@example.com", password="pass")
+        blocked = User.objects.create_user(username="blocked_user", email="blocked@example.com", password="pass")
         HouseholdMembership.objects.create(
             household=self.household,
             user=blocked,

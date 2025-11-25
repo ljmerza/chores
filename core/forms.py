@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from households.models import Household
 from .models import User
 
@@ -8,8 +9,15 @@ TAILWIND_INPUT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus
 TAILWIND_TEXTAREA_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 resize-none'
 TAILWIND_SELECT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 bg-white'
 
+username_validator = UnicodeUsernameValidator()
+
 
 class SetupWizardForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        validators=[username_validator],
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'username'})
+    )
     email = forms.EmailField(
         required=False,
         widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'your@email.com (optional)'})
@@ -42,10 +50,18 @@ class SetupWizardForm(forms.Form):
         })
     )
 
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            raise forms.ValidationError("Username is required.")
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email:
-            if User.objects.filter(email=email).exists():
+            if User.objects.filter(email__iexact=email).exists():
                 raise forms.ValidationError("This email is already registered.")
         return email
 
@@ -69,6 +85,11 @@ class InviteSignupForm(forms.Form):
     invite_code = forms.CharField(
         max_length=8,
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': '8-character code'})
+    )
+    username = forms.CharField(
+        max_length=150,
+        validators=[username_validator],
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Pick a username'})
     )
     email = forms.EmailField(
         required=False,
@@ -98,10 +119,18 @@ class InviteSignupForm(forms.Form):
             raise forms.ValidationError("Invalid invite code. Please check with your household admin.")
         return code
 
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            raise forms.ValidationError("Username is required.")
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email:
-            if User.objects.filter(email=email).exists():
+            if User.objects.filter(email__iexact=email).exists():
                 raise forms.ValidationError("This email is already registered.")
         return email
 
@@ -128,6 +157,12 @@ class AdditionalAccountForm(forms.Form):
         ('child', 'Child'),
     ]
 
+    username = forms.CharField(
+        required=False,
+        max_length=150,
+        validators=[username_validator],
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'username'})
+    )
     first_name = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'First name'})
@@ -153,9 +188,17 @@ class AdditionalAccountForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if email and User.objects.filter(email=email).exists():
+        if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if not username:
+            return username
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
@@ -163,11 +206,19 @@ class AdditionalAccountForm(forms.Form):
             validate_password(password)
         return password
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.is_blank():
+            return cleaned_data
+        if not (cleaned_data.get('username') or '').strip():
+            raise forms.ValidationError("Username is required for each account.")
+        return cleaned_data
+
     def is_blank(self):
         """
         Helper to skip entirely empty rows in the formset.
         """
-        fields = ['first_name', 'last_name', 'email', 'password']
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
         return all(not self.data.get(self.add_prefix(field)) for field in fields)
 
 
@@ -180,10 +231,10 @@ AdditionalAccountFormSet = forms.formset_factory(
 
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={
             'class': TAILWIND_INPUT_CLASS,
-            'placeholder': 'you@example.com'
+            'placeholder': 'your username'
         })
     )
     password = forms.CharField(
@@ -201,7 +252,7 @@ class LoginForm(forms.Form):
     )
 
     error_messages = {
-        'invalid_login': "We couldn't find an account with that email/password.",
+        'invalid_login': "We couldn't find an account with that username/password.",
         'inactive': "This account is inactive.",
     }
 
@@ -211,11 +262,11 @@ class LoginForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        email = cleaned_data.get('email')
+        username = cleaned_data.get('username')
         password = cleaned_data.get('password')
 
-        if email and password:
-            self._user = authenticate(email=email, password=password)
+        if username and password:
+            self._user = authenticate(username=username, password=password)
             if self._user is None:
                 raise forms.ValidationError(self.error_messages['invalid_login'])
             if not self._user.is_active:

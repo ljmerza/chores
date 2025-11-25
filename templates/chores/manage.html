@@ -154,7 +154,7 @@
                             </td>
                             <td class="px-4 py-4 text-sm text-gray-800">
                                 {% if chore.assigned_to %}
-                                    {{ chore.assigned_to.full_name|default:chore.assigned_to.email|default:"User" }}
+                                    {{ chore.assigned_to.full_name|default:chore.assigned_to.username|default:"User" }}
                                 {% elif chore.assignment_type == 'rotating' %}
                                     Rotation pool
                                 {% else %}

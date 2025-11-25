@@ -95,6 +95,7 @@ class SetupWizardView(TemplateView):
         if form.is_valid():
             with transaction.atomic():
                 user = User.objects.create_user(
+                    username=form.cleaned_data['username'],
                     email=form.cleaned_data['email'],
                     password=form.cleaned_data['password'],
                     first_name=form.cleaned_data['first_name'],
@@ -164,6 +165,7 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
         formset = AdditionalAccountFormSet(request.POST)
         valid = formset.is_valid()
         emails_seen = set()
+        usernames_seen = set()
 
         if valid:
             for form in formset:
@@ -171,11 +173,19 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
                     continue
 
                 email = form.cleaned_data.get('email')
+                username = form.cleaned_data.get('username')
                 if email:
-                    if email in emails_seen:
+                    normalized_email = email.lower()
+                    if normalized_email in emails_seen:
                         form.add_error('email', "This email is already listed.")
                         valid = False
-                    emails_seen.add(email)
+                    emails_seen.add(normalized_email)
+                if username:
+                    normalized_username = username.lower()
+                    if normalized_username in usernames_seen:
+                        form.add_error('username', "This username is already listed.")
+                        valid = False
+                    usernames_seen.add(normalized_username)
 
         if valid:
             with transaction.atomic():
@@ -188,8 +198,9 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
                     is_admin = role == 'admin'
 
                     user = User.objects.create_user(
+                        username=data.get('username'),
                         email=data.get('email'),
-                        password=data.get('password'),
+                        password=data.get('password') or None,
                         first_name=data.get('first_name'),
                         last_name=data.get('last_name'),
                         role=role,
@@ -432,6 +443,7 @@ class InviteSignupView(TemplateView):
             household = Household.objects.get(invite_code=form.cleaned_data['invite_code'])
             with transaction.atomic():
                 user = User.objects.create_user(
+                    username=form.cleaned_data['username'],
                     email=form.cleaned_data.get('email'),
                     password=form.cleaned_data['password'],
                     first_name=form.cleaned_data['first_name'],

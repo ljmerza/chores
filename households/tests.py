@@ -10,7 +10,7 @@ from households.models import Household, HouseholdMembership, UserScore
 
 class HouseholdModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="owner@example.com", password="pass")
+        self.user = User.objects.create_user(username="owner", email="owner@example.com", password="pass")
 
     def test_invite_code_regenerates_on_collision(self):
         """
@@ -42,6 +42,7 @@ class HouseholdModelTests(TestCase):
 class ManageHouseholdViewTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
+            username="owner_admin",
             email="owner@example.com",
             password="Str0ngPass!",
             role="admin",
@@ -57,7 +58,7 @@ class ManageHouseholdViewTests(TestCase):
         self.url = reverse("manage_household")
 
     def test_member_cannot_access_manage(self):
-        member = User.objects.create_user(email="member@example.com", password="pass")
+        member = User.objects.create_user(username="member_one", email="member@example.com", password="pass")
         HouseholdMembership.objects.create(
             household=self.household,
             user=member,
@@ -94,6 +95,7 @@ class ManageHouseholdViewTests(TestCase):
                 "household_id": self.household.id,
                 "first_name": "New",
                 "last_name": "Member",
+                "username": "newmember",
                 "email": "new@example.com",
                 "role": "member",
                 "password": "TempPass123!",
@@ -129,7 +131,10 @@ class ManageHouseholdViewTests(TestCase):
 
     def test_change_role_when_multiple_admins(self):
         second_admin = User.objects.create_user(
-            email="second@example.com", password="Str0ngPass!", role="admin"
+            username="second_admin",
+            email="second@example.com",
+            password="Str0ngPass!",
+            role="admin",
         )
         HouseholdMembership.objects.create(
             household=self.household,

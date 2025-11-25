@@ -82,10 +82,13 @@
                     <input type="hidden" name="action" value="invite_member">
                     <input type="hidden" name="household_id" value="{{ selected_household.id }}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% include 'components/form_field.html' with label="Username" field=invite_form.username errors=invite_form.username.errors required=True %}
+                        {% include 'components/form_field.html' with label="Email (optional)" field=invite_form.email errors=invite_form.email.errors %}
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% include 'components/form_field.html' with label="First name" field=invite_form.first_name errors=invite_form.first_name.errors required=True %}
                         {% include 'components/form_field.html' with label="Last name" field=invite_form.last_name errors=invite_form.last_name.errors %}
                     </div>
-                    {% include 'components/form_field.html' with label="Email" field=invite_form.email errors=invite_form.email.errors required=True %}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% include 'components/form_field.html' with label="Role" field=invite_form.role errors=invite_form.role.errors %}
                         {% include 'components/form_field.html' with label="Set password" field=invite_form.password errors=invite_form.password.errors help_text="Leave blank to set later." %}
@@ -122,7 +125,7 @@
                                 <div class="flex items-center gap-3">
                                     <div>
                                         <p class="font-semibold text-gray-900">{{ row.membership.user.full_name|default:"Unnamed" }}</p>
-                                        <p class="text-xs text-gray-500">{{ row.membership.user.email|default:"(no email)" }}</p>
+                                        <p class="text-xs text-gray-500">@{{ row.membership.user.username }}{% if row.membership.user.email %} · {{ row.membership.user.email }}{% else %} · no email{% endif %}</p>
                                     </div>
                                     {% if row.membership.role == 'admin' %}
                                         {% include 'components/badge.html' with text="Admin" variant="primary" %}

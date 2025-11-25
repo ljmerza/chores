@@ -6,14 +6,14 @@ from .models import User
 
 
 class UserCreationForm(forms.ModelForm):
-    """Form for creating users in the admin without usernames."""
+    """Form for creating users in the admin with username login."""
 
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
 
     class Meta:
         model = User
-        fields = ("email", "first_name", "last_name", "role", "is_staff", "is_superuser", "is_active")
+        fields = ("username", "email", "first_name", "last_name", "role", "is_staff", "is_superuser", "is_active")
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -31,13 +31,13 @@ class UserCreationForm(forms.ModelForm):
 
 
 class UserChangeForm(forms.ModelForm):
-    """Form for updating users in the admin without usernames."""
+    """Form for updating users in the admin with username login."""
 
     password = ReadOnlyPasswordHashField()
 
     class Meta:
         model = User
-        fields = ("email", "password", "first_name", "last_name", "role", "avatar", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")
+        fields = ("username", "email", "password", "first_name", "last_name", "role", "avatar", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")
 
 
 @admin.register(User)
@@ -46,14 +46,14 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     model = User
 
-    list_display = ['email', 'first_name', 'last_name', 'role', 'is_staff', 'created_at']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'is_staff', 'created_at']
     list_filter = ['role', 'is_staff', 'is_superuser', 'is_active']
-    search_fields = ['email', 'first_name', 'last_name']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering = ['-created_at']
     readonly_fields = ['last_login', 'created_at', 'updated_at']
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('username', 'email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'avatar', 'role')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'created_at', 'updated_at')}),
@@ -62,6 +62,6 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'role', 'avatar', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'),
+            'fields': ('username', 'email', 'first_name', 'last_name', 'role', 'avatar', 'password1', 'password2', 'is_staff', 'is_superuser', 'is_active', 'groups', 'user_permissions'),
         }),
     )
