@@ -202,6 +202,7 @@ CELERY_ENABLE_UTC = True
 REMINDER_LEAD_TIME_MINUTES = config('REMINDER_LEAD_TIME_MINUTES', default=60, cast=int)
 REMINDER_COOLDOWN_MINUTES = config('REMINDER_COOLDOWN_MINUTES', default=120, cast=int)
 REMINDER_SCAN_INTERVAL_MINUTES = config('REMINDER_SCAN_INTERVAL_MINUTES', default=1440, cast=int)
+REMINDER_SCHEDULE_DIGEST_INTERVAL_MINUTES = config('REMINDER_SCHEDULE_DIGEST_INTERVAL_MINUTES', default=5, cast=int)
 RECURRENCE_GENERATE_INTERVAL_MINUTES = config('RECURRENCE_GENERATE_INTERVAL_MINUTES', default=60, cast=int)
 RECURRENCE_LOOKAHEAD_DAYS = config('RECURRENCE_LOOKAHEAD_DAYS', default=30, cast=int)
 STREAK_ROLLUP_INTERVAL_MINUTES = config('STREAK_ROLLUP_INTERVAL_MINUTES', default=1440, cast=int)
@@ -212,6 +213,10 @@ CELERY_BEAT_SCHEDULE = {
     "scan_due_chore_items": {
         "task": "chores.tasks.scan_due_items",
         "schedule": timedelta(minutes=REMINDER_SCAN_INTERVAL_MINUTES),
+    },
+    "send_scheduled_chore_digests": {
+        "task": "chores.tasks.send_scheduled_chore_digests",
+        "schedule": timedelta(minutes=REMINDER_SCHEDULE_DIGEST_INTERVAL_MINUTES),
     },
     "generate_recurring_chore_instances": {
         "task": "chores.tasks.generate_recurring_instances",

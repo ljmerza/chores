@@ -12,6 +12,7 @@ from django.utils import timezone
 from chores.models import Chore, ChoreInstance, Notification
 from core.services.notifications import create_notification
 from households.models import Leaderboard, PointTransaction, UserScore
+from households.models import ReminderSchedule
 
 logger = get_task_logger(__name__)
 
@@ -45,6 +46,84 @@ def _recent_notification(notification_type: str, user_id: int, household_id: int
     return Notification.objects.filter(**filters).exists()
 
 
+def _scheduled_users_by_household():
+    """
+    Return a mapping of household_id -> set(user_id) for members with an active schedule.
+    """
+    scheduled: dict[int, set[int]] = {}
+    qs = ReminderSchedule.objects.filter(active=True).values_list("household_id", "user_id")
+    for household_id, user_id in qs:
+        scheduled.setdefault(household_id, set()).add(user_id)
+    return scheduled
+
+
+def _is_user_scheduled(user_id: int, household_id: int, scheduled_users: dict[int, set[int]]) -> bool:
+    return user_id in scheduled_users.get(household_id, set())
+
+
+def _parse_hhmm(value: str | None) -> time | None:
+    if not value:
+        return None
+    try:
+        hour, minute = [int(x) for x in value.split(":", 1)]
+        return time(hour=hour, minute=minute)
+    except Exception:  # noqa: BLE001
+        logger.warning("Invalid schedule time '%s'; skipping.", value)
+        return None
+
+
+def _collect_due_items(user, household, window_end, now, tz):
+    """
+    Return counts and earliest due time for chores assigned to the user within the window.
+    """
+    active_statuses = ["available", "claimed", "in_progress"]
+    earliest_due = None
+    overdue_count = 0
+    total = 0
+
+    instances = (
+        ChoreInstance.objects.filter(
+            chore__household=household,
+            status__in=active_statuses,
+            due_date__lte=window_end,
+        )
+        .filter(Q(assigned_to=user) | Q(claimed_by=user))
+        .only("due_date")
+    )
+    chores = (
+        Chore.objects.filter(
+            household=household,
+            assigned_to=user,
+            status__in=["pending", "in_progress"],
+            due_date__isnull=False,
+            due_date__lte=window_end,
+        ).only("due_date")
+    )
+
+    def _bump(dt):
+        nonlocal earliest_due, overdue_count, total
+        total += 1
+        if dt <= now:
+            overdue_count += 1
+        if earliest_due is None or dt < earliest_due:
+            earliest_due = dt
+
+    for inst in instances:
+        _bump(inst.due_date)
+    for chore in chores:
+        _bump(chore.due_date)
+
+    return {
+        "count": total,
+        "overdue": overdue_count,
+        "earliest_due": _format_due_local(earliest_due, tz) if earliest_due else None,
+    }
+
+
+def _format_due_local(dt, tz):
+    return timezone.localtime(dt, tz).strftime("%b %d, %I:%M %p")
+
+
 @shared_task
 def scan_due_items():
     """
@@ -57,11 +136,13 @@ def scan_due_items():
     cooldown_minutes = getattr(settings, "REMINDER_COOLDOWN_MINUTES", 120)
     lead_window = now + timedelta(minutes=lead_minutes)
 
-    _scan_instances(now, lead_window, cooldown_minutes)
-    _scan_base_chores(now, lead_window, cooldown_minutes)
+    scheduled_users = _scheduled_users_by_household()
+
+    _scan_instances(now, lead_window, cooldown_minutes, scheduled_users)
+    _scan_base_chores(now, lead_window, cooldown_minutes, scheduled_users)
 
 
-def _scan_instances(now, lead_window, cooldown_minutes):
+def _scan_instances(now, lead_window, cooldown_minutes, scheduled_users):
     active_statuses = ["available", "claimed", "in_progress"]
     instances = (
         ChoreInstance.objects.filter(
@@ -76,6 +157,13 @@ def _scan_instances(now, lead_window, cooldown_minutes):
         due_state = "overdue" if instance.due_date <= now else "due"
         user = instance.assigned_user
         if not user:
+            continue
+
+        # Users with an active schedule get their reminders via the scheduled digest task.
+        if _is_user_scheduled(user.id, instance.chore.household_id, scheduled_users):
+            if due_state == "overdue" and instance.status in active_statuses:
+                instance.status = "expired"
+                instance.save(update_fields=["status"])
             continue
 
         notif_type = "chore_overdue" if due_state == "overdue" else "chore_due"
@@ -98,7 +186,7 @@ def _scan_instances(now, lead_window, cooldown_minutes):
             instance.save(update_fields=["status"])
 
 
-def _scan_base_chores(now, lead_window, cooldown_minutes):
+def _scan_base_chores(now, lead_window, cooldown_minutes, scheduled_users):
     """
     Cover non-instance chores so existing flows still get reminders.
     """
@@ -117,6 +205,9 @@ def _scan_base_chores(now, lead_window, cooldown_minutes):
         if not user:
             continue
 
+        if _is_user_scheduled(user.id, chore.household_id, scheduled_users):
+            continue
+
         due_state = "overdue" if chore.due_date <= now else "due"
         notif_type = "chore_overdue" if due_state == "overdue" else "chore_due"
         link_key = f"chore-{chore.id}"
@@ -132,6 +223,67 @@ def _scan_base_chores(now, lead_window, cooldown_minutes):
             title="Chore overdue" if due_state == "overdue" else "Chore due soon",
             message=message,
             link=f"/chores/{chore.id}",
+        )
+
+
+@shared_task
+def send_scheduled_chore_digests():
+    """
+    Send due/overdue reminders based on per-user schedules (one time per day).
+    Runs frequently and fires when the current local time is within a tolerance window.
+    """
+    now = timezone.now()
+    lead_minutes = getattr(settings, "REMINDER_LEAD_TIME_MINUTES", 60)
+    cooldown_minutes = getattr(settings, "REMINDER_COOLDOWN_MINUTES", 120)
+    interval_minutes = getattr(settings, "REMINDER_SCHEDULE_DIGEST_INTERVAL_MINUTES", 5)
+    tolerance_minutes = max(1, interval_minutes // 2 or 1)
+
+    schedules = ReminderSchedule.objects.filter(active=True).select_related("household", "user")
+    for schedule in schedules:
+        household = schedule.household
+        user = schedule.user
+        tz = _get_tz(getattr(household, "timezone", None))
+        local_now = now.astimezone(tz)
+        day_key = local_now.strftime("%a").lower()[:3]
+        per_day = schedule.per_day_time or {}
+        send_time_str = per_day.get(day_key)
+        send_time = _parse_hhmm(send_time_str)
+        if not send_time:
+            continue
+
+        scheduled_local = local_now.replace(
+            hour=send_time.hour,
+            minute=send_time.minute,
+            second=0,
+            microsecond=0,
+        )
+
+        delta_seconds = abs((local_now - scheduled_local).total_seconds())
+        if delta_seconds > tolerance_minutes * 60:
+            continue
+
+        window_end_local = scheduled_local + timedelta(minutes=lead_minutes)
+        window_end = window_end_local.astimezone(timezone.utc)
+
+        due_summary = _collect_due_items(user, household, window_end, now, tz)
+        if due_summary["count"] == 0:
+            continue
+
+        link_key = f"digest-{scheduled_local.date()}-{scheduled_local.strftime('%H%M')}"
+        if _recent_notification("chore_due", user.id, household.id, link_key, cooldown_minutes):
+            continue
+
+        overdue_note = f" ({due_summary['overdue']} overdue)" if due_summary["overdue"] else ""
+        next_due_note = f" Next due {due_summary['earliest_due']}." if due_summary["earliest_due"] else ""
+        message = f"You have {due_summary['count']} chore(s) due or overdue{overdue_note}.{next_due_note}"
+
+        create_notification(
+            user=user,
+            household=household,
+            notification_type="chore_due",
+            title="Chore reminder",
+            message=message.strip(),
+            link=f"/chores?digest={link_key}",
         )
 
 
