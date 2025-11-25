@@ -85,19 +85,19 @@
                     </div>
                     <div class="p-5 space-y-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-red-600 uppercase tracking-wide mb-2">Overdue</h3>
+                            <h3 class="text-sm font-semibold text-danger uppercase tracking-wide mb-2">Overdue</h3>
                         {% if overdue_chores %}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {% for chore in overdue_chores %}
-                            <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+                            <div class="border border-danger/20 bg-danger/10 rounded-lg p-4">
                                 <div class="flex items-center justify-between">
                                     <p class="font-semibold text-gray-900">{{ chore.title }}</p>
                                     {% include 'components/badge.html' with text="Overdue" variant="danger" %}
                                 </div>
                                 {% if chore.due_date %}
-                                <p class="text-sm text-red-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                <p class="text-sm text-danger mt-1">Due {{ chore.due_date|date:"M j, Y" }}</p>
                                 {% else %}
-                                <p class="text-sm text-red-700 mt-1">Anytime</p>
+                                <p class="text-sm text-danger mt-1">Anytime</p>
                                     {% endif %}
                                     <p class="text-xs text-gray-500 mt-2">Points: {{ chore.base_points }} | Priority: {{ chore.get_priority_display }}</p>
                                     <form method="post"
@@ -125,7 +125,7 @@
                                     {% include 'components/badge.html' with text="Today" variant="primary" %}
                                 </div>
                                 {% if chore.due_date %}
-                                <p class="text-sm text-gray-600 mt-1">Due {{ chore.due_date|date:"g:ia" }}</p>
+                                <p class="text-sm text-gray-600 mt-1">Due {{ chore.due_date|date:"M j, Y" }}</p>
                                 {% else %}
                                 <p class="text-sm text-gray-600 mt-1">Anytime</p>
                                     {% endif %}
@@ -161,7 +161,7 @@
                                     {% include 'components/badge.html' with text="Available" variant="success" %}
                                 </div>
                                 {% if chore.due_date %}
-                                <p class="text-sm text-gray-700 mt-1">Due {{ chore.due_date|date:"M j, g:ia" }}</p>
+                                <p class="text-sm text-gray-700 mt-1">Due {{ chore.due_date|date:"M j, Y" }}</p>
                                 {% else %}
                                 <p class="text-sm text-gray-700 mt-1">Anytime</p>
                                 {% endif %}

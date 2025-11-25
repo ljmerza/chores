@@ -5,7 +5,7 @@ Plans to deliver each suggested change. Each section lists objectives, concrete 
 ## 1) Model Invariants & Indexes
 - Objectives: enforce non-negative values, prevent duplicate invite codes, add useful indexes.
 - Steps:
-  - [x] Convert point/quantity fields to `PositiveIntegerField` or add `CheckConstraint` where negatives are allowed (e.g., penalties) but need bounds.
+  - [ ] Convert point/quantity fields to `PositiveIntegerField` or add `CheckConstraint` where negatives are allowed (e.g., penalties) but need bounds. (Most in place; `Leaderboard.points/chores_completed/rank` and `PointTransaction.balance_after` still allow negatives—decide guard/constraint.)
   - [ ] Add `clean()` validations for `Reward` and `Chore` point ranges; keep `save()` logic to backfill `quantity_remaining` on create (backfill is in place).
   - [x] Implement an invite-code regeneration loop to guarantee uniqueness on `Household` creation/regeneration.
   - [x] Add DB index: `Chore(household, status, priority)`.
@@ -35,8 +35,9 @@ Plans to deliver each suggested change. Each section lists objectives, concrete 
 ## 4) Background Jobs & Scheduling
 - Objectives: offload recurring work and reminders.
 - Steps:
-  - [ ] Add Celery + Redis config (worker + beat); create tasks for recurring chore instantiation, due/overdue reminders, streak recalculation, leaderboard rollups.
-  - [ ] Wire periodic schedules in `celery.py`/`celerybeat` settings and docker-compose.
+  - [x] Add Celery + Redis config (worker + beat) and tasks for due/overdue reminders plus basic recurrence generation.
+  - [ ] Implement streak recalculation and leaderboard rollup tasks (not yet wired).
+  - [x] Wire periodic schedules in `celery.py`/`celerybeat` settings and docker-compose.
   - [ ] Ensure tasks call service-layer functions and are idempotent (use locks or check states).
   - [ ] Add smoke tests for tasks (e.g., daily job creates instances and sends reminders).
 - Decisions/Risks: pick broker/result backend (Redis vs database); rate-limit notifications to avoid spam.
@@ -57,5 +58,5 @@ Plans to deliver each suggested change. Each section lists objectives, concrete 
   - [ ] Add WhiteNoise for static files and optional S3/media storage configuration.
   - [ ] Introduce Tailwind build pipeline (npm + PostCSS) for production instead of CDN.
   - [ ] Add pytest + factory_boy, coverage config, and a minimal CI workflow (lint, tests, migrations check).
-  - [ ] Update Docker/Docker Compose to include Celery services and static collection step.
+  - [ ] Update Docker/Docker Compose to include Celery services and static collection step (Celery worker/beat/flower already included; still need collectstatic).
 - Decisions/Risks: choose testing database (SQLite vs MySQL) for CI; decide on error monitoring (Sentry) and logging format for containers.

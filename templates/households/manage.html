@@ -127,7 +127,7 @@
                                     {% include 'components/button.html' with type="submit" label="Update" variant="secondary" size="sm" %}
                                 </form>
                                 {% if row.membership.role == 'admin' and admin_count <= 1 %}
-                                    <p class="text-xs text-red-500 mt-1">At least one admin required.</p>
+                                    <p class="text-xs text-danger mt-1">At least one admin required.</p>
                                 {% endif %}
                             </td>
                             <td class="px-4 py-4 text-right text-sm">
@@ -136,7 +136,7 @@
                                     <input type="hidden" name="action" value="remove_member">
                                     <input type="hidden" name="membership_id" value="{{ row.membership.id }}">
                                     <input type="hidden" name="household_id" value="{{ selected_household.id }}">
-                                    <button type="submit" {% if row.membership.role == 'admin' and admin_count <= 1 %}disabled{% endif %} class="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 shadow-sm bg-red-600 text-white hover:bg-red-700 text-sm px-3 py-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                                    <button type="submit" {% if row.membership.role == 'admin' and admin_count <= 1 %}disabled{% endif %} class="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 shadow-sm bg-danger text-white hover:bg-danger/90 text-sm px-3 py-2 disabled:opacity-60 disabled:cursor-not-allowed">
                                         Remove
                                     </button>
                                 </form>

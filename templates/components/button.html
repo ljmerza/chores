@@ -1,7 +1,7 @@
 {% with variant=variant|default:'primary' size=size|default:'md' %}
     {% if href %}
         <a href="{{ href }}" class="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 shadow-sm
-            {% if variant == 'primary' %} bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md hover:translate-y-[-1px]{% elif variant == 'secondary' %} bg-white text-gray-900 border border-gray-300 hover:bg-gray-50{% elif variant == 'danger' %} bg-red-600 text-white hover:bg-red-700{% elif variant == 'ghost' %} bg-transparent text-primary shadow-none hover:underline{% elif variant == 'subtle' %} bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200{% elif variant == 'success' %} bg-green-600 text-white hover:bg-green-700{% else %} bg-gray-900 text-white hover:bg-gray-800{% endif %}
+            {% if variant == 'primary' %} bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md hover:translate-y-[-1px]{% elif variant == 'secondary' %} bg-white text-gray-900 border border-gray-300 hover:bg-gray-50{% elif variant == 'danger' %} bg-danger text-white hover:bg-danger/90{% elif variant == 'ghost' %} bg-transparent text-primary shadow-none hover:underline{% elif variant == 'subtle' %} bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200{% elif variant == 'success' %} bg-green-600 text-white hover:bg-green-700{% else %} bg-gray-900 text-white hover:bg-gray-800{% endif %}
             {% if size == 'sm' %} text-sm px-3 py-2{% elif size == 'lg' %} text-base px-5 py-3{% else %} text-sm px-4 py-2.5{% endif %}
             {% if block %} w-full{% endif %} {{ extra_classes }}">
             {% if icon %}<span class="mr-2">{{ icon }}</span>{% endif %}
@@ -9,7 +9,7 @@
         </a>
     {% else %}
         <button type="{{ type|default:'button' }}" class="inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 shadow-sm
-            {% if variant == 'primary' %} bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md hover:translate-y-[-1px]{% elif variant == 'secondary' %} bg-white text-gray-900 border border-gray-300 hover:bg-gray-50{% elif variant == 'danger' %} bg-red-600 text-white hover:bg-red-700{% elif variant == 'ghost' %} bg-transparent text-primary shadow-none hover:underline{% elif variant == 'subtle' %} bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200{% elif variant == 'success' %} bg-green-600 text-white hover:bg-green-700{% else %} bg-gray-900 text-white hover:bg-gray-800{% endif %}
+            {% if variant == 'primary' %} bg-gradient-to-r from-primary to-secondary text-white hover:shadow-md hover:translate-y-[-1px]{% elif variant == 'secondary' %} bg-white text-gray-900 border border-gray-300 hover:bg-gray-50{% elif variant == 'danger' %} bg-danger text-white hover:bg-danger/90{% elif variant == 'ghost' %} bg-transparent text-primary shadow-none hover:underline{% elif variant == 'subtle' %} bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200{% elif variant == 'success' %} bg-green-600 text-white hover:bg-green-700{% else %} bg-gray-900 text-white hover:bg-gray-800{% endif %}
             {% if size == 'sm' %} text-sm px-3 py-2{% elif size == 'lg' %} text-base px-5 py-3{% else %} text-sm px-4 py-2.5{% endif %}
             {% if block %} w-full{% endif %} {{ extra_classes }}">
             {% if icon %}<span class="mr-2">{{ icon }}</span>{% endif %}

@@ -16,7 +16,7 @@
                     <div class="mb-6 space-y-2">
                         {% include 'components/alert.html' with variant="error" message="Please correct the errors below." %}
                         {% if form.non_field_errors %}
-                            <p class="text-sm text-red-700">{{ form.non_field_errors }}</p>
+                            <p class="text-sm text-danger">{{ form.non_field_errors }}</p>
                         {% endif %}
                     </div>
                 {% endif %}

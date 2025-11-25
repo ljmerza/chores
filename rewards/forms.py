@@ -130,7 +130,7 @@ class RewardForm(forms.Form):
             for name, field in self.fields.items():
                 if name in self.errors:
                     existing = field.widget.attrs.get('class', '')
-                    field.widget.attrs['class'] = f"{existing} border-red-400 focus:border-red-400 focus:ring-red-300".strip()
+                    field.widget.attrs['class'] = f"{existing} border-danger focus:border-danger focus:ring-danger/50".strip()
 
     def clean(self):
         cleaned = super().clean()

@@ -144,7 +144,7 @@
                             </td>
                             <td class="px-4 py-4 text-sm text-gray-800">
                                 {% if chore.due_date %}
-                                    {{ chore.due_date|date:"M j, g:ia" }}
+                                    {{ chore.due_date|date:"M j, Y" }}
                                 {% else %}
                                     Anytime
                                 {% endif %}
