@@ -84,6 +84,14 @@ docker-compose down
 docker-compose down -v
 ```
 
+## Background Workers (Celery)
+
+- Services are defined in `docker-compose.yml`: `celery` (worker), `celery-beat` (scheduler), `flower` (monitor on port 5555), and `redis` (broker/result backend).
+- `docker-compose up` will start them alongside the web app; check Flower at `http://localhost:5555` to see task status.
+- Scheduled jobs:
+  - `scan_due_items`: finds chores/instances that are due soon or overdue and emits notifications; overdue instances are marked `expired`.
+  - `generate_recurring_instances`: placeholder that ensures recurring chores have an upcoming instance.
+
 ## Local Development (without Docker)
 
 ### Prerequisites

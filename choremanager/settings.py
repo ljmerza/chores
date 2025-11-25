@@ -189,3 +189,29 @@ POINTS_MULTIPLIER_EASY = 1
 POINTS_MULTIPLIER_MEDIUM = 2
 POINTS_MULTIPLIER_HARD = 3
 POINTS_MULTIPLIER_EXPERT = 5
+
+# Celery / background tasks
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+REMINDER_LEAD_TIME_MINUTES = config('REMINDER_LEAD_TIME_MINUTES', default=60, cast=int)
+REMINDER_COOLDOWN_MINUTES = config('REMINDER_COOLDOWN_MINUTES', default=120, cast=int)
+REMINDER_SCAN_INTERVAL_MINUTES = config('REMINDER_SCAN_INTERVAL_MINUTES', default=10, cast=int)
+RECURRENCE_GENERATE_INTERVAL_MINUTES = config('RECURRENCE_GENERATE_INTERVAL_MINUTES', default=60, cast=int)
+RECURRENCE_LOOKAHEAD_DAYS = config('RECURRENCE_LOOKAHEAD_DAYS', default=30, cast=int)
+
+CELERY_BEAT_SCHEDULE = {
+    "scan_due_chore_items": {
+        "task": "chores.tasks.scan_due_items",
+        "schedule": timedelta(minutes=REMINDER_SCAN_INTERVAL_MINUTES),
+    },
+    "generate_recurring_chore_instances": {
+        "task": "chores.tasks.generate_recurring_instances",
+        "schedule": timedelta(minutes=RECURRENCE_GENERATE_INTERVAL_MINUTES),
+    },
+}
