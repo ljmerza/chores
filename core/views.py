@@ -15,7 +15,17 @@ from households.models import Household, HouseholdMembership, UserScore
 from chores.models import Chore, Notification
 from rewards.models import Reward
 from rewards.services import request_redemption, RewardError
-from .forms import InviteSignupForm, SetupWizardForm, AdditionalAccountFormSet, LoginForm
+from .forms import (
+    AdditionalAccountFormSet,
+    HouseholdSignupForm,
+    InviteAccountForm,
+    InviteCodeForm,
+    LoginForm,
+    SetupWizardForm,
+)
+
+
+INVITE_SESSION_KEY = 'invite_signup_household_id'
 
 
 class AdminHubView(LoginRequiredMixin, TemplateView):
@@ -228,15 +238,100 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
         })
 
 
+class SignupChoiceView(TemplateView):
+    template_name = 'core/signup_choice.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class HouseholdSignupView(TemplateView):
+    template_name = 'core/signup_create_household.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = HouseholdSignupForm()
+        return context
+
+    def post(self, request):
+        form = HouseholdSignupForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=form.cleaned_data['username'],
+                    email=form.cleaned_data['email'],
+                    password=form.cleaned_data['password'],
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    role='admin',
+                    is_staff=False,
+                    is_superuser=False
+                )
+
+                household = Household.objects.create(
+                    name=form.cleaned_data['household_name'],
+                    description=form.cleaned_data.get('household_description', ''),
+                    created_by=user
+                )
+
+                HouseholdMembership.objects.create(
+                    household=household,
+                    user=user,
+                    role='admin'
+                )
+
+                UserScore.objects.create(
+                    user=user,
+                    household=household
+                )
+
+                login(request, user)
+                messages.success(request, "Household created! You're the admin for this household.")
+                return redirect('home')
+
+        return render(request, self.template_name, {'form': form})
+
+
+class InviteCodeView(TemplateView):
+    template_name = 'core/invite_code.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = InviteCodeForm()
+        return context
+
+    def post(self, request):
+        form = InviteCodeForm(request.POST)
+        if form.is_valid():
+            household = form.household
+            request.session[INVITE_SESSION_KEY] = household.id
+            messages.info(
+                request,
+                f"Invite verified for {household.name}. Create your account to join."
+            )
+            return redirect('invite_signup')
+
+        return render(request, self.template_name, {'form': form})
+
+
 class HomeView(TemplateView):
     template_name = 'core/home.html'
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and request.session.get('setup_household_id'):
             return redirect('setup_wizard_members')
-
-        if not User.objects.exists():
-            return redirect('setup_wizard')
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -379,9 +474,6 @@ class LoginView(TemplateView):
     template_name = 'core/login.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if not User.objects.exists():
-            return redirect('setup_wizard')
-
         if request.user.is_authenticated:
             next_url = request.GET.get('next')
             if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
@@ -425,22 +517,30 @@ class InviteSignupView(TemplateView):
     template_name = 'core/invite.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if not User.objects.exists():
-            return redirect('setup_wizard')
-
         if request.user.is_authenticated:
             return redirect('home')
+
+        self.household = self._get_verified_household(request)
+        if not self.household:
+            messages.info(request, "Enter an invite code to join a household.")
+            return redirect('invite_code')
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = InviteSignupForm()
+        context['form'] = InviteAccountForm()
+        context['household'] = self.household
         return context
 
     def post(self, request):
-        form = InviteSignupForm(request.POST)
+        household = self._get_verified_household(request)
+        if not household:
+            messages.info(request, "Enter an invite code to join a household.")
+            return redirect('invite_code')
+
+        form = InviteAccountForm(request.POST)
         if form.is_valid():
-            household = Household.objects.get(invite_code=form.cleaned_data['invite_code'])
             with transaction.atomic():
                 user = User.objects.create_user(
                     username=form.cleaned_data['username'],
@@ -462,10 +562,22 @@ class InviteSignupView(TemplateView):
                     household=household
                 )
 
+                request.session.pop(INVITE_SESSION_KEY, None)
+
                 login(request, user)
+                messages.success(request, f"Welcome to {household.name}! You're all set.")
                 return redirect('home')
 
         return render(request, self.template_name, {'form': form})
+
+    def _get_verified_household(self, request):
+        household_id = request.session.get(INVITE_SESSION_KEY)
+        if not household_id:
+            return None
+        household = Household.objects.filter(id=household_id).first()
+        if not household:
+            request.session.pop(INVITE_SESSION_KEY, None)
+        return household
 
 
 def _ensure_membership(user, household):

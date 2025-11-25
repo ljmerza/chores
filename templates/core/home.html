@@ -16,10 +16,16 @@
 
     {% if not user.is_authenticated %}
     {% url 'login' as login_url %}
+    {% url 'household_signup' as create_url %}
+    {% url 'invite_code' as invite_url %}
     <div class="max-w-3xl mx-auto text-center bg-white rounded-2xl shadow-xl p-10">
         <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Chore Manager</h1>
-        <p class="text-gray-600 mb-6">Log in to see your chores, points, and rewards.</p>
-        {% include 'components/button.html' with href=login_url label="Login" variant="primary" size="lg" %}
+        <p class="text-gray-600 mb-6">Create a household or join with an invite code to get started.</p>
+        <div class="flex flex-col md:flex-row items-center justify-center gap-3">
+            {% include 'components/button.html' with href=create_url label="Create household" variant="primary" size="lg" %}
+            {% include 'components/button.html' with href=invite_url label="Join with invite code" variant="secondary" size="lg" %}
+            {% include 'components/button.html' with href=login_url label="Login" variant="ghost" size="lg" %}
+        </div>
     </div>
     {% elif not households %}
     <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-10">

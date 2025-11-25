@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Get Started - Chore Manager{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white py-16 px-4">
+    <div class="max-w-5xl mx-auto space-y-10">
+        <div class="text-center space-y-3">
+            <p class="text-sm uppercase tracking-[0.3em] text-primary font-semibold">Create your account</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">Join Chore Manager</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">You must either create a household or join one with an invite code. Pick the option that matches how your household wants to start.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl">1</div>
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900">Create a household</h2>
+                        <p class="text-gray-600">Set up a new household as the admin. Invite others later with an invite code.</p>
+                    </div>
+                </div>
+                <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                    <li>Choose your username and password</li>
+                    <li>Name your household and add an optional description</li>
+                    <li>Start earning points right away as the admin</li>
+                </ul>
+                {% url 'household_signup' as create_url %}
+                <div class="pt-2">
+                    {% include 'components/button.html' with href=create_url label="Create a household" variant="primary" size="lg" block=True %}
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-lg p-8 flex flex-col space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xl">2</div>
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-900">Join with an invite</h2>
+                        <p class="text-gray-600">Use an invite code from an existing household and confirm before signing up.</p>
+                    </div>
+                </div>
+                <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                    <li>Verify the household by invite code</li>
+                    <li>Create your account to join as a member</li>
+                    <li>You’ll join one household during signup</li>
+                </ul>
+                {% url 'invite_code' as invite_url %}
+                <div class="pt-2">
+                    {% include 'components/button.html' with href=invite_url label="Join with invite code" variant="secondary" size="lg" block=True %}
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-sm text-gray-600">
+            <p>Already have an account? <a href="{% url 'login' %}" class="font-semibold text-primary hover:underline">Log in</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

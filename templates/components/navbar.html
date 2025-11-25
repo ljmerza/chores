@@ -26,7 +26,11 @@
                         </button>
                     </form>
                 {% else %}
-                    <a href="{% url 'invite_signup' %}"
+                    <a href="{% url 'household_signup' %}"
+                       class="text-gray-200 px-3 py-2 rounded-lg font-semibold hover:text-white">
+                        Create household
+                    </a>
+                    <a href="{% url 'invite_code' %}"
                        class="text-gray-200 px-3 py-2 rounded-lg font-semibold hover:text-white">
                         Join household
                     </a>

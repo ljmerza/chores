@@ -83,11 +83,31 @@ class SetupWizardForm(forms.Form):
         return cleaned_data
 
 
-class InviteSignupForm(forms.Form):
+class HouseholdSignupForm(SetupWizardForm):
+    """
+    Mirrors the setup wizard fields/validation but is used for the public
+    create-household flow (no staff/superuser defaults are applied here).
+    """
+
+
+class InviteCodeForm(forms.Form):
     invite_code = forms.CharField(
         max_length=8,
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': '8-character code'})
     )
+
+    def clean_invite_code(self):
+        code = (self.cleaned_data.get('invite_code') or '').strip().upper()
+        if not code:
+            raise forms.ValidationError("Invite code is required.")
+        household = Household.objects.filter(invite_code=code).first()
+        if not household:
+            raise forms.ValidationError("Invalid invite code. Please check with your household admin.")
+        self.household = household
+        return code
+
+
+class InviteAccountForm(forms.Form):
     username = forms.CharField(
         max_length=150,
         validators=[username_validator],
@@ -112,14 +132,6 @@ class InviteSignupForm(forms.Form):
     password_confirm = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Confirm password'})
     )
-
-    def clean_invite_code(self):
-        code = (self.cleaned_data.get('invite_code') or '').strip().upper()
-        if not code:
-            raise forms.ValidationError("Invite code is required.")
-        if not Household.objects.filter(invite_code=code).exists():
-            raise forms.ValidationError("Invalid invite code. Please check with your household admin.")
-        return code
 
     def clean_username(self):
         username = (self.cleaned_data.get('username') or '').strip()

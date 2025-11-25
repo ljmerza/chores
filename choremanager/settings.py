@@ -201,9 +201,12 @@ CELERY_ENABLE_UTC = True
 
 REMINDER_LEAD_TIME_MINUTES = config('REMINDER_LEAD_TIME_MINUTES', default=60, cast=int)
 REMINDER_COOLDOWN_MINUTES = config('REMINDER_COOLDOWN_MINUTES', default=120, cast=int)
-REMINDER_SCAN_INTERVAL_MINUTES = config('REMINDER_SCAN_INTERVAL_MINUTES', default=10, cast=int)
+REMINDER_SCAN_INTERVAL_MINUTES = config('REMINDER_SCAN_INTERVAL_MINUTES', default=1440, cast=int)
 RECURRENCE_GENERATE_INTERVAL_MINUTES = config('RECURRENCE_GENERATE_INTERVAL_MINUTES', default=60, cast=int)
 RECURRENCE_LOOKAHEAD_DAYS = config('RECURRENCE_LOOKAHEAD_DAYS', default=30, cast=int)
+STREAK_ROLLUP_INTERVAL_MINUTES = config('STREAK_ROLLUP_INTERVAL_MINUTES', default=1440, cast=int)
+NOTIFICATION_RETENTION_DAYS = config('NOTIFICATION_RETENTION_DAYS', default=90, cast=int)
+COMPLETED_INSTANCE_RETENTION_DAYS = config('COMPLETED_INSTANCE_RETENTION_DAYS', default=180, cast=int)
 
 CELERY_BEAT_SCHEDULE = {
     "scan_due_chore_items": {
@@ -213,6 +216,10 @@ CELERY_BEAT_SCHEDULE = {
     "generate_recurring_chore_instances": {
         "task": "chores.tasks.generate_recurring_instances",
         "schedule": timedelta(minutes=RECURRENCE_GENERATE_INTERVAL_MINUTES),
+    },
+    "recompute_streaks_and_leaderboards": {
+        "task": "chores.tasks.recompute_streaks_and_leaderboards",
+        "schedule": timedelta(minutes=STREAK_ROLLUP_INTERVAL_MINUTES),
     },
 }
 

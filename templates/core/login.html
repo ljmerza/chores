@@ -70,7 +70,7 @@
                         {{ form.remember_me }}
                         <span>Keep me signed in</span>
                     </label>
-                    <a href="{% url 'invite_signup' %}" class="text-sm font-semibold text-primary hover:underline">Need an invite?</a>
+                    <a href="{% url 'signup_choice' %}" class="text-sm font-semibold text-primary hover:underline">Create or join</a>
                 </div>
 
                 <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-gray-900 text-white font-semibold px-4 py-3 rounded-xl hover:bg-gray-800 transition">
@@ -80,7 +80,7 @@
             </form>
 
             <div class="mt-6 text-sm text-gray-600 flex items-center justify-between">
-                <span>New to the household? Ask an admin for an invite code.</span>
+                <span>New here? <a href="{% url 'signup_choice' %}" class="font-semibold text-primary hover:underline">Create a household or join with a code.</a></span>
                 <a href="{% url 'home' %}" class="font-semibold text-primary hover:underline">Back home</a>
             </div>
         </div>

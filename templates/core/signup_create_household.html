@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Create a Household - Chore Manager{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white py-16 px-4">
+    <div class="max-w-5xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+            <div class="p-8 md:p-10 space-y-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.25em] text-primary font-semibold">Create household</p>
+                        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">Start a new household</h1>
+                        <p class="text-gray-600 mt-2 max-w-2xl">Set up your admin account and household details. Every new account must either create a household or join one with an invite code.</p>
+                    </div>
+                    <a href="{% url 'invite_code' %}" class="text-sm font-semibold text-primary hover:underline">Have an invite code? Join instead</a>
+                </div>
+
+                {% if form.errors %}
+                    <div class="mb-2 space-y-2">
+                        {% include 'components/alert.html' with variant="error" message="Please correct the errors below." %}
+                        {% if form.non_field_errors %}
+                            <p class="text-sm text-danger">{{ form.non_field_errors }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <form method="post" class="space-y-8" novalidate>
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Your account</h2>
+                            {% include 'components/form_field.html' with label="Username" field=form.username errors=form.username.errors for_id=form.username.id_for_label help_text="You'll use this to sign in." wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="First Name" field=form.first_name errors=form.first_name.errors for_id=form.first_name.id_for_label wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="Last Name (optional)" field=form.last_name errors=form.last_name.errors for_id=form.last_name.id_for_label wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Add an email for notifications and password resets." wrapper_classes="text-sm" %}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {% include 'components/form_field.html' with label="Password" field=form.password errors=form.password.errors for_id=form.password.id_for_label wrapper_classes="text-sm" %}
+                                {% include 'components/form_field.html' with label="Confirm Password" field=form.password_confirm errors=form.password_confirm.errors for_id=form.password_confirm.id_for_label wrapper_classes="text-sm" %}
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Household details</h2>
+                            {% include 'components/form_field.html' with label="Household Name" field=form.household_name errors=form.household_name.errors for_id=form.household_name.id_for_label help_text="What should we call your household?" wrapper_classes="text-sm" %}
+                            {% include 'components/form_field.html' with label="Description (optional)" field=form.household_description errors=form.household_description.errors for_id=form.household_description.id_for_label help_text="Share a short description or house rules." wrapper_classes="text-sm" %}
+                            <div class="bg-primary/5 border border-primary/20 rounded-lg p-4 text-sm text-gray-700">
+                                <p class="font-semibold text-primary mb-1">One household per signup</p>
+                                <p>Create one account and one household here. Invite others with your code once you’re in.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% include 'components/button.html' with type="submit" label="Create household & continue" variant="primary" size="lg" block=True %}
+                </form>
+
+                <div class="text-center text-sm text-gray-600">
+                    <p>Already have an account? <a href="{% url 'login' %}" class="font-semibold text-primary hover:underline">Log in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

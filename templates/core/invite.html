@@ -1,19 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}Join a Household - Chore Manager{% endblock %}
+{% block title %}Join {{ household.name }} - Chore Manager{% endblock %}
 
 {% block content %}
-<div class="flex justify-center items-center min-h-screen py-12">
-    <div class="w-full max-w-2xl">
+<div class="flex justify-center items-center min-h-screen py-12 px-4">
+    <div class="w-full max-w-3xl">
         <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-8 md:p-12">
-                <div class="text-center mb-8">
-                    <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-2">Join a Household</h1>
-                    <p class="text-gray-600">Enter your invite code and create your account.</p>
+            <div class="p-8 md:p-12 space-y-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.25em] text-primary font-semibold">Invite verified</p>
+                        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 leading-tight">Join {{ household.name }}</h1>
+                        <p class="text-gray-600 mt-2">Create your account to join this household. You’ll join as a member.</p>
+                    </div>
+                    <a href="{% url 'invite_code' %}" class="text-sm font-semibold text-primary hover:underline">
+                        Use a different invite code
+                    </a>
                 </div>
 
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <div class="md:col-span-2">
+                        <p class="text-xs uppercase text-gray-500 tracking-wide">Household</p>
+                        <p class="text-xl font-semibold text-gray-900">{{ household.name }}</p>
+                        {% if household.description %}
+                            <p class="text-sm text-gray-600 mt-1">{{ household.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex md:flex-col justify-between items-start gap-2">
+                        <div>
+                            <p class="text-xs uppercase text-gray-500 tracking-wide">Invite Code</p>
+                            <p class="text-lg font-mono font-semibold text-primary">{{ household.invite_code }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if messages %}
+                    {% include 'components/messages.html' %}
+                {% endif %}
+
                 {% if form.errors %}
-                    <div class="mb-6 space-y-2">
+                    <div class="mb-2 space-y-2">
                         {% include 'components/alert.html' with variant="error" message="Please correct the errors below." %}
                         {% if form.non_field_errors %}
                             <p class="text-sm text-danger">{{ form.non_field_errors }}</p>
@@ -23,8 +49,6 @@
 
                 <form method="post" novalidate class="space-y-6">
                     {% csrf_token %}
-
-                    {% include 'components/form_field.html' with label="Invite Code" field=form.invite_code errors=form.invite_code.errors for_id=form.invite_code.id_for_label help_text="Ask the household owner for their 8-character code." wrapper_classes="text-sm" %}
 
                     {% include 'components/form_field.html' with label="Username" field=form.username errors=form.username.errors for_id=form.username.id_for_label help_text="You'll use this to sign in." wrapper_classes="text-sm" %}
 
@@ -40,10 +64,10 @@
                         {% include 'components/form_field.html' with label="Confirm Password" field=form.password_confirm errors=form.password_confirm.errors for_id=form.password_confirm.id_for_label wrapper_classes="text-sm" %}
                     </div>
 
-                    {% include 'components/button.html' with type="submit" label="Join Household" variant="primary" size="lg" block=True %}
+                    {% include 'components/button.html' with type="submit" label="Create account & join" variant="primary" size="lg" block=True %}
                 </form>
 
-                <div class="mt-6 text-center text-sm text-gray-500">
+                <div class="mt-4 text-center text-sm text-gray-500">
                     <p>Already have an account? <a href="{% url 'login' %}" class="text-primary font-semibold hover:underline">Log in</a></p>
                 </div>
             </div>

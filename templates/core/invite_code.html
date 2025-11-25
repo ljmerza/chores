@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Join a Household - Chore Manager{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-screen py-12 px-4">
+    <div class="w-full max-w-xl">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-8 md:p-10 space-y-6">
+                <div class="text-center space-y-2">
+                    <p class="text-sm uppercase tracking-[0.25em] text-primary font-semibold">Join a household</p>
+                    <h1 class="text-4xl font-bold text-gray-900">Enter your invite code</h1>
+                    <p class="text-gray-600">We'll verify the household before you create your account.</p>
+                </div>
+
+                {% if messages %}
+                    {% include 'components/messages.html' %}
+                {% endif %}
+
+                {% if form.errors %}
+                    <div class="mb-2">
+                        {% include 'components/alert.html' with variant="error" message="Please correct the errors below." %}
+                    </div>
+                {% endif %}
+
+                <form method="post" class="space-y-6" novalidate>
+                    {% csrf_token %}
+                    {% include 'components/form_field.html' with label="Invite Code" field=form.invite_code errors=form.invite_code.errors for_id=form.invite_code.id_for_label help_text="Ask the household owner for their 8-character code." wrapper_classes="text-sm" %}
+                    {% include 'components/button.html' with type="submit" label="Verify invite" variant="primary" size="lg" block=True %}
+                </form>
+
+                <div class="text-sm text-gray-600 flex items-center justify-between">
+                    <a href="{% url 'household_signup' %}" class="font-semibold text-primary hover:underline">Want to create a household instead?</a>
+                    <a href="{% url 'login' %}" class="font-semibold text-gray-700 hover:underline">Back to login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

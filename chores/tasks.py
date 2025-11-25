@@ -6,10 +6,12 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from chores.models import Chore, ChoreInstance, Notification
 from core.services.notifications import create_notification
+from households.models import Leaderboard, PointTransaction, UserScore
 
 logger = get_task_logger(__name__)
 
@@ -353,3 +355,201 @@ def _is_nth_weekday(current: date, weekday: int, nth: int) -> bool:
                 return count == nth
         day += 1
     return False
+
+
+@shared_task
+def recompute_streaks_and_leaderboards():
+    """
+    Recalculate streaks/totals and leaderboard standings from recent activity.
+    """
+    now = timezone.now()
+    _recompute_streaks(now)
+    _recompute_leaderboards(now)
+    _prune_old_data()
+
+
+def _recompute_streaks(now):
+    """
+    Rebuild streaks per user/household based on completed/verified instances.
+    """
+    completions = (
+        ChoreInstance.objects.filter(
+            status__in=["completed", "verified"],
+            completed_at__isnull=False,
+        )
+        .select_related("chore", "assigned_to", "claimed_by")
+        .order_by()
+    )
+
+    stats = {}
+    for instance in completions:
+        user_id = instance.claimed_by_id or instance.assigned_to_id
+        if not user_id:
+            continue
+        key = (instance.chore.household_id, user_id)
+        payload = stats.setdefault(key, {"datetimes": []})
+        payload["datetimes"].append(instance.completed_at)
+
+    for (household_id, user_id), payload in stats.items():
+        datetimes = payload["datetimes"]
+        if not datetimes:
+            continue
+
+        dates_desc = sorted({timezone.localdate(dt) for dt in datetimes}, reverse=True)
+        current_streak = _calc_current_streak(dates_desc)
+        longest_streak = _calc_longest_streak(dates_desc)
+        last_completed = max(datetimes)
+        total_completed = len(datetimes)
+
+        with transaction.atomic():
+            score, _ = UserScore.objects.select_for_update().get_or_create(
+                user_id=user_id,
+                household_id=household_id,
+                defaults={
+                    "current_points": 0,
+                    "lifetime_points": 0,
+                    "total_chores_completed": 0,
+                },
+            )
+            score.current_streak = current_streak
+            score.longest_streak = max(longest_streak, score.longest_streak)
+            score.total_chores_completed = total_completed
+            score.last_chore_completed_at = last_completed
+            score.save(
+                update_fields=[
+                    "current_streak",
+                    "longest_streak",
+                    "total_chores_completed",
+                    "last_chore_completed_at",
+                    "updated_at",
+                ]
+            )
+
+
+def _calc_current_streak(dates_desc: list[date]) -> int:
+    if not dates_desc:
+        return 0
+    streak = 1
+    for idx in range(1, len(dates_desc)):
+        delta = (dates_desc[idx - 1] - dates_desc[idx]).days
+        if delta == 1:
+            streak += 1
+        elif delta == 0:
+            continue
+        else:
+            break
+    return streak
+
+
+def _calc_longest_streak(dates_desc: list[date]) -> int:
+    if not dates_desc:
+        return 0
+    longest = 1
+    run = 1
+    for idx in range(1, len(dates_desc)):
+        delta = (dates_desc[idx - 1] - dates_desc[idx]).days
+        if delta == 1:
+            run += 1
+        elif delta == 0:
+            continue
+        else:
+            run = 1
+        if run > longest:
+            longest = run
+    return longest
+
+
+def _recompute_leaderboards(now):
+    """
+    Rebuild leaderboard rows for daily/weekly/monthly/all_time.
+    """
+    periods = _leaderboard_periods(now)
+    for period, start_date, end_date in periods:
+        entries = _aggregate_leaderboard(period, start_date, end_date)
+        _upsert_leaderboard(period, start_date, end_date, entries)
+
+
+def _leaderboard_periods(now):
+    today = timezone.localdate(now)
+    start_week = today - timedelta(days=today.weekday())  # Monday start
+    start_month = today.replace(day=1)
+    last_day_month = calendar.monthrange(today.year, today.month)[1]
+    end_month = today.replace(day=last_day_month)
+
+    return [
+        ("daily", today, today),
+        ("weekly", start_week, start_week + timedelta(days=6)),
+        ("monthly", start_month, end_month),
+        ("all_time", date(1970, 1, 1), None),
+    ]
+
+
+def _aggregate_leaderboard(period, start_date: date, end_date: date | None):
+    start_dt = timezone.make_aware(datetime.combine(start_date, time.min))
+    qs = PointTransaction.objects.filter(created_at__gte=start_dt)
+    if end_date:
+        end_dt = timezone.make_aware(datetime.combine(end_date, time.max))
+        qs = qs.filter(created_at__lte=end_dt)
+
+    aggregates = qs.values("household_id", "user_id").annotate(
+        points=Sum("amount"),
+        chores_completed=Count("id", filter=Q(transaction_type="earned")),
+    )
+
+    by_household = {}
+    for row in aggregates:
+        household_id = row["household_id"]
+        by_household.setdefault(household_id, []).append(row)
+    return by_household
+
+
+def _upsert_leaderboard(period, start_date: date, end_date: date | None, entries_by_household):
+    for household_id, entries in entries_by_household.items():
+        entries.sort(key=lambda r: (-r["points"], -r["chores_completed"], r["user_id"]))
+        user_ids = []
+        for idx, row in enumerate(entries, start=1):
+            user_ids.append(row["user_id"])
+            Leaderboard.objects.update_or_create(
+                household_id=household_id,
+                user_id=row["user_id"],
+                period=period,
+                period_start_date=start_date,
+                defaults={
+                    "period_end_date": end_date,
+                    "points": row["points"] or 0,
+                    "chores_completed": row["chores_completed"] or 0,
+                    "rank": idx,
+                },
+            )
+
+        Leaderboard.objects.filter(
+            household_id=household_id,
+            period=period,
+            period_start_date=start_date,
+        ).exclude(user_id__in=user_ids).delete()
+
+
+def _prune_old_data():
+    """
+    Remove stale notifications and completed/expired instances per retention settings.
+    """
+    notif_days = getattr(settings, "NOTIFICATION_RETENTION_DAYS", 90)
+    instance_days = getattr(settings, "COMPLETED_INSTANCE_RETENTION_DAYS", 180)
+    now = timezone.now()
+
+    if notif_days > 0:
+        cutoff = now - timedelta(days=notif_days)
+        deleted, _ = Notification.objects.filter(created_at__lt=cutoff).delete()
+        if deleted:
+            logger.info("Pruned %s old notifications (>%s days)", deleted, notif_days)
+
+    if instance_days > 0:
+        cutoff = now - timedelta(days=instance_days)
+        deleted, _ = (
+            ChoreInstance.objects.filter(
+                status__in=["completed", "verified", "expired"],
+                completed_at__lt=cutoff,
+            ).delete()
+        )
+        if deleted:
+            logger.info("Pruned %s old chore instances (>%s days)", deleted, instance_days)
