@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Notifications{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-6xl mx-auto space-y-6">
+        {% if messages %}
+        <div>
+            {% include 'components/messages.html' %}
+        </div>
+        {% endif %}
+
+        {% if selected_household %}
+            {% with header_title="Notifications for "|add:selected_household.name %}
+                {% include 'components/page_header.html' with eyebrow="Notifications" title=header_title subtitle="Review delivery routing and the latest in-app notifications for this household." actions_template='components/actions/header_switcher.html' %}
+            {% endwith %}
+        {% else %}
+            {% include 'components/page_header.html' with eyebrow="Notifications" title="Manage notifications" subtitle="Review delivery routing and the latest in-app notifications for this household." actions_template='components/actions/header_switcher.html' %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% include 'components/stat_tile.html' with label="Total notifications" value=counts.total helper="Last 50 events" tone="primary" %}
+            {% include 'components/stat_tile.html' with label="Unread" value=counts.unread helper="Needs attention" tone="danger" %}
+            {% if selected_household %}
+                {% include 'components/stat_tile.html' with label="Household" value=selected_household.name helper="Adjust via switcher" tone="muted" %}
+            {% else %}
+                {% include 'components/stat_tile.html' with label="Household" value="None selected" helper="Use the switcher above" tone="muted" %}
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100">
+            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Recent notifications</h2>
+                    {% if selected_household %}
+                        <p class="text-sm text-gray-500">Showing up to 50 latest notifications in {{ selected_household.name }}.</p>
+                    {% else %}
+                        <p class="text-sm text-gray-500">Select a household to inspect notifications.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                {% for note in notifications %}
+                <div class="p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                    <div class="space-y-1">
+                        <p class="text-xs uppercase tracking-wide text-primary font-semibold">{{ note.get_notification_type_display }}</p>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ note.title }}</h3>
+                        <p class="text-sm text-gray-700">{{ note.message }}</p>
+                        <div class="text-xs text-gray-500">
+                            To {{ note.user.full_name|default:note.user.username|default:"User" }} • {{ note.created_at|date:"M j, Y g:i A" }}
+                            {% if note.link %}• <a class="text-primary hover:underline" href="{{ note.link }}">Related link</a>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if note.is_read %}
+                            {% include 'components/badge.html' with text="Read" variant="muted" %}
+                        {% else %}
+                            {% include 'components/badge.html' with text="Unread" variant="warning" %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-6 text-center text-gray-500 text-sm">
+                    No notifications yet for this household.
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="px-5 py-4 bg-gray-50 border-t border-gray-100 text-sm text-gray-600">
+                Use this view to audit in-app notifications while wiring delivery channels (Home Assistant, email, SMS).
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

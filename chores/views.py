@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
 from core.models import User
-from .models import Chore, ChoreRotation
+from .models import Chore, ChoreRotation, Notification
 from .forms import CreateChoreForm
 
 
@@ -274,5 +274,71 @@ class ManageChoresView(LoginRequiredMixin, TemplateView):
                 'verified': base_qs.filter(status='verified').count(),
             },
             'visible_count': chores_qs.count(),
+        })
+        return context
+
+
+class ManageNotificationsView(LoginRequiredMixin, TemplateView):
+    template_name = 'chores/manage_notifications.html'
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.households = self._household_queryset()
+
+        if not self.households.exists():
+            messages.error(request, "Join or create a household to manage notifications.")
+            return redirect('home')
+
+        self.selected_household = self._selected_household()
+        if not self.selected_household:
+            messages.error(request, "Select a household to manage notifications.")
+            return redirect('home')
+
+        if not self._is_admin(request.user, self.selected_household):
+            messages.error(request, "You need to be an admin to manage notifications.")
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def _household_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Household.objects.all()
+        return Household.objects.filter(
+            memberships__user=user,
+            memberships__role='admin'
+        ).distinct()
+
+    def _selected_household(self):
+        requested = self.request.GET.get('household')
+        if requested:
+            return self.households.filter(id=requested).first()
+        return self.households.first()
+
+    def _is_admin(self, user, household):
+        return (
+            HouseholdMembership.objects.filter(
+                household=household,
+                user=user,
+                role='admin'
+            ).exists()
+            or user.is_staff
+            or user.role == 'admin'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        notifications_qs = Notification.objects.filter(
+            household=self.selected_household
+        ).select_related('user')
+
+        context.update({
+            'households': self.households,
+            'selected_household': self.selected_household,
+            'notifications': notifications_qs.order_by('-created_at')[:50],
+            'counts': {
+                'total': notifications_qs.count(),
+                'unread': notifications_qs.filter(is_read=False).count(),
+            }
         })
         return context

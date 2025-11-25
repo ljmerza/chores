@@ -30,7 +30,7 @@ from core.views import (
     complete_chore,
     redeem_reward
 )
-from chores.views import CreateChoreView, EditChoreView, ManageChoresView
+from chores.views import CreateChoreView, EditChoreView, ManageChoresView, ManageNotificationsView
 from households.views import ManageHouseholdView
 from rewards.views import CreateRewardView, EditRewardView, ManageRewardsView
 from rewards.views import RedeemRewardsView
@@ -45,6 +45,7 @@ urlpatterns = [
     path('admin-hub/', AdminHubView.as_view(), name='admin_hub'),
     path('households/manage/', ManageHouseholdView.as_view(), name='manage_household'),
     path('chores/manage/', ManageChoresView.as_view(), name='manage_chores'),
+    path('notifications/manage/', ManageNotificationsView.as_view(), name='manage_notifications'),
     path('chores/create/', CreateChoreView.as_view(), name='create_chore'),
     path('chores/<int:pk>/edit/', EditChoreView.as_view(), name='edit_chore'),
     path('chores/<int:pk>/claim/', claim_chore, name='claim_chore'),

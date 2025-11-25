@@ -58,6 +58,14 @@
                     </div>
                     <span class="text-primary text-xl">★</span>
                 </a>
+                <a href="{% url 'manage_notifications' %}?household={{ selected_household.id }}"
+                    class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
+                    <div>
+                        <p class="font-semibold text-gray-800">Manage notifications</p>
+                        <p class="text-xs text-gray-500">Channels, routing, and logs</p>
+                    </div>
+                    <span class="text-primary text-xl">!</span>
+                </a>
                 <a href="{% url 'create_reward' %}?household={{ selected_household.id }}"
                     class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 hover:border-primary hover:shadow">
                     <div>
