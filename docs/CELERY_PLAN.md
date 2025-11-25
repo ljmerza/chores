@@ -51,3 +51,15 @@ Working plan to add Celery, Celery Beat, and Flower to the stack and use them to
 - Should due/overdue be persisted as a field (e.g., `due_state`) or remain derived with only notifications/reminder logs?
 - How many future instances to materialize (fixed window vs. capped count)?
 - Reminder cooldown storage: in DB table vs. Redis keys.
+
+## Next Implementation Tasks
+- **Streak/leaderboard rollups**
+  - Add a Celery task (e.g., `tasks.recompute_streaks_and_leaderboards`) that recalculates per-household streaks and leaderboard standings from recent `ChoreInstance` completions.
+  - Update `UserScore` fields (current/longest streak, totals) with `select_for_update()` to avoid races; bulk rebuild `Leaderboard` rows for daily/weekly/monthly/all_time.
+  - Schedule via beat (nightly for streaks; hourly/daily for leaderboards); make idempotent and bounded (e.g., last 60 days of completions).
+- **Cleanup/maintenance**
+  - Add pruning tasks for old data (e.g., `Notification` older than N days, completed/expired `ChoreInstance` older than a window, Celery result backend cleanup if stored).
+  - Use configurable retention, batch deletes to reduce locks, and optional beat schedule (weekly) with a disable knob.
+- **Reminder cooldown storage choice**
+  - Introduce a Redis-backed cooldown check for reminders (key per user/household/type/link with TTL) with DB fallback; configurable backend (`REMINDER_COOLDOWN_BACKEND=redis|db`).
+  - Wire into `scan_due_items` to skip duplicate sends when a cooldown key exists; keep current DB check as a safety net.
