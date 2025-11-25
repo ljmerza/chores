@@ -1,0 +1,13 @@
+{% include 'components/household_switcher.html' %}
+<div class="flex items-center gap-3 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg px-4 py-3">
+    <div>
+        <p class="text-xs uppercase text-gray-500 tracking-widest">Invite Code</p>
+        <p class="text-lg font-mono font-semibold text-primary">{{ selected_household.invite_code }}</p>
+    </div>
+    <form method="post" class="ml-auto">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="regenerate_invite">
+        <input type="hidden" name="household_id" value="{{ selected_household.id }}">
+        {% include 'components/button.html' with type="submit" label="Regenerate" variant="secondary" size="sm" %}
+    </form>
+</div>

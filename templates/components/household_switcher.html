@@ -1,0 +1,15 @@
+<form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner {{ classes }}">
+    <label for="{{ select_id|default:'household' }}" class="text-sm text-gray-600">Household</label>
+    <select name="household" id="{{ select_id|default:'household' }}" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
+        {% for h in households %}
+            <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
+        {% endfor %}
+    </select>
+    {% for key, value in request.GET.items %}
+        {% if key != 'household' %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endif %}
+    {% endfor %}
+    {% if extra_hidden %}{{ extra_hidden }}{% endif %}
+    <button type="submit" class="ml-2 text-primary font-semibold text-sm hover:underline">{{ submit_label|default:'Switch' }}</button>
+</form>

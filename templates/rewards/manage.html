@@ -15,40 +15,20 @@
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <p class="text-xs uppercase font-semibold text-primary tracking-wider">Rewards</p>
-                    <h1 class="text-3xl font-bold text-gray-900">Manage {{ selected_household.name }}</h1>
-                    <p class="text-gray-600 mt-1">See every reward, spot low stock, and jump into edits fast.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
-                        <label for="household" class="text-sm text-gray-600">Household</label>
-                        <select name="household" id="household" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
-                            {% for h in households %}
-                                <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-                        {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
-                        {% if availability_filter %}<input type="hidden" name="availability" value="{{ availability_filter }}">{% endif %}
-                        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-                        <button type="submit" class="ml-2 text-primary font-semibold text-sm hover:underline">Switch</button>
-                    </form>
-                    {% url 'create_reward' as create_reward_url %}
-                    {% if selected_household %}
-                        {% with household_id=selected_household.id|stringformat:"s" %}
-                            {% with create_href=create_reward_url|add:"?household="|add:household_id %}
-                                {% include 'components/button.html' with href=create_href label="Create reward" size="sm" %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        {% include 'components/button.html' with href=create_reward_url label="Create reward" size="sm" %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% url 'create_reward' as create_reward_url %}
+        {% if selected_household %}
+            {% with header_title="Manage "|add:selected_household.name %}
+                {% with household_id=selected_household.id|stringformat:"s" %}
+                    {% with button_href=create_reward_url|add:"?household="|add:household_id button_label="Create reward" %}
+                        {% include 'components/page_header.html' with eyebrow="Rewards" title=header_title subtitle="See every reward, spot low stock, and jump into edits fast." actions_template='components/actions/header_switcher_with_button.html' %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% else %}
+            {% with header_title="Manage rewards" button_href=create_reward_url button_label="Create reward" %}
+                {% include 'components/page_header.html' with eyebrow="Rewards" title=header_title subtitle="See every reward, spot low stock, and jump into edits fast." actions_template='components/actions/header_switcher_with_button.html' %}
+            {% endwith %}
+        {% endif %}
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             {% include 'components/stat_tile.html' with label="Total" value=counts.total helper="All rewards" tone="primary" %}
@@ -121,74 +101,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         {% for reward in rewards %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-4 align-top">
-                                <div class="flex flex-col gap-1">
-                                    <div class="flex items-center gap-2">
-                                        <p class="font-semibold text-gray-900">{{ reward.title }}</p>
-                                        {% if reward.is_featured %}
-                                            {% include 'components/badge.html' with text="Featured" variant="primary" %}
-                                        {% endif %}
-                                        {% if reward.requires_approval %}
-                                            {% include 'components/badge.html' with text="Needs approval" variant="info" %}
-                                        {% endif %}
-                                    </div>
-                                    {% if reward.description %}
-                                        <p class="text-sm text-gray-600">{{ reward.description|truncatechars:110 }}</p>
-                                    {% endif %}
-                                    {% if reward.tags %}
-                                        <p class="text-xs text-gray-500">Tags: {{ reward.tags }}</p>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-800">
-                                {% if reward.is_active %}
-                                    {% include 'components/badge.html' with text="Active" variant="success" %}
-                                {% else %}
-                                    {% include 'components/badge.html' with text="Inactive" variant="muted" %}
-                                {% endif %}
-                                <p class="text-xs text-gray-500 mt-1">{{ reward.get_category_display }}</p>
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-800">
-                                <div class="font-semibold text-gray-900">{{ reward.point_cost }} pts</div>
-                                {% if reward.per_user_limit %}
-                                    <p class="text-xs text-gray-500">Per-user: {{ reward.per_user_limit }}</p>
-                                {% endif %}
-                                {% if reward.cooldown_days %}
-                                    <p class="text-xs text-gray-500">Cooldown: {{ reward.cooldown_days }}d</p>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-800">
-                                {% if reward.quantity_available %}
-                                    <div class="font-semibold text-gray-900">{{ reward.quantity_remaining|default:reward.quantity_available }} / {{ reward.quantity_available }}</div>
-                                    {% if reward.low_stock_threshold and reward.quantity_remaining and reward.quantity_remaining <= reward.low_stock_threshold %}
-                                        {% include 'components/badge.html' with text="Low" variant="danger" %}
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-gray-700">Unlimited</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-800">
-                                {% if reward.available_from or reward.available_until %}
-                                    {% if reward.available_from %}<p class="text-xs text-gray-600">From {{ reward.available_from|date:"M j, g:ia" }}</p>{% endif %}
-                                    {% if reward.available_until %}<p class="text-xs text-gray-600">Until {{ reward.available_until|date:"M j, g:ia" }}</p>{% endif %}
-                                {% else %}
-                                    <span class="text-gray-700">Always</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-4 text-right text-sm">
-                                {% url 'edit_reward' reward.id as edit_url %}
-                                {% if selected_household %}
-                                    {% with household_id=selected_household.id|stringformat:"s" %}
-                                        {% with edit_href=edit_url|add:"?household="|add:household_id %}
-                                            {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% else %}
-                                    {% include 'components/button.html' with href=edit_url label="Edit" variant="secondary" size="sm" %}
-                                {% endif %}
-                            </td>
-                        </tr>
+                        {% include 'components/reward_row.html' with reward=reward mode='manage' %}
                         {% empty %}
                         <tr>
                             <td colspan="6" class="px-4 py-6 text-center text-gray-500 text-sm">No rewards match these filters.</td>

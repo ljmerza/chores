@@ -15,39 +15,20 @@
         </div>
         {% endif %}
 
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <p class="text-xs uppercase font-semibold text-primary tracking-wider">Chores</p>
-                    <h1 class="text-3xl font-bold text-gray-900">Manage {{ selected_household.name }}</h1>
-                    <p class="text-gray-600 mt-1">Review every chore in this household, filter quickly, and jump into edits.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
-                        <label for="household" class="text-sm text-gray-600">Household</label>
-                        <select name="household" id="household" class="bg-transparent text-gray-900 font-semibold focus:outline-none">
-                            {% for h in households %}
-                                <option value="{{ h.id }}" {% if selected_household and h.id == selected_household.id %}selected{% endif %}>{{ h.name }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-                        {% if assignment_filter %}<input type="hidden" name="assignment" value="{{ assignment_filter }}">{% endif %}
-                        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-                        <button type="submit" class="ml-2 text-primary font-semibold text-sm hover:underline">Switch</button>
-                    </form>
-                    {% url 'create_chore' as create_chore_url %}
-                    {% if selected_household %}
-                        {% with household_id=selected_household.id|stringformat:"s" %}
-                            {% with create_href=create_chore_url|add:"?household="|add:household_id %}
-                                {% include 'components/button.html' with href=create_href label="Create chore" size="sm" %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        {% include 'components/button.html' with href=create_chore_url label="Create chore" size="sm" %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% url 'create_chore' as create_chore_url %}
+        {% if selected_household %}
+            {% with header_title="Manage "|add:selected_household.name %}
+                {% with household_id=selected_household.id|stringformat:"s" %}
+                    {% with button_href=create_chore_url|add:"?household="|add:household_id button_label="Create chore" %}
+                        {% include 'components/page_header.html' with eyebrow="Chores" title=header_title subtitle="Review every chore in this household, filter quickly, and jump into edits." actions_template='components/actions/header_switcher_with_button.html' %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% else %}
+            {% with header_title="Manage chores" button_href=create_chore_url button_label="Create chore" %}
+                {% include 'components/page_header.html' with eyebrow="Chores" title=header_title subtitle="Review every chore in this household, filter quickly, and jump into edits." actions_template='components/actions/header_switcher_with_button.html' %}
+            {% endwith %}
+        {% endif %}
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             {% include 'components/stat_tile.html' with label="Total chores" value=counts.total helper="All chores in this household" tone="primary" %}

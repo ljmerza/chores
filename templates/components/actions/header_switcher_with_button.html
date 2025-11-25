@@ -1,0 +1,4 @@
+{% include 'components/household_switcher.html' %}
+{% if button_href and button_label %}
+    {% include 'components/button.html' with href=button_href label=button_label variant=button_variant|default:'primary' size=button_size|default:'sm' %}
+{% endif %}
