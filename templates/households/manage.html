@@ -46,7 +46,7 @@
             <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 space-y-4">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900">Invite a member</h3>
-                    <p class="text-sm text-gray-500">Create an account and add them to this household.</p>
+                    <p class="text-sm text-gray-500">Create an account and add them to this household. Admins/members need an email; kids can be added without one.</p>
                 </div>
                 <form method="post" class="space-y-4">
                     {% csrf_token %}
@@ -54,7 +54,7 @@
                     <input type="hidden" name="household_id" value="{{ selected_household.id }}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% include 'components/form_field.html' with label="Username" field=invite_form.username errors=invite_form.username.errors required=True %}
-                        {% include 'components/form_field.html' with label="Email (optional)" field=invite_form.email errors=invite_form.email.errors %}
+                        {% include 'components/form_field.html' with label="Email (admins/parents required)" field=invite_form.email errors=invite_form.email.errors help_text="Required for admins/members; optional for kids." %}
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {% include 'components/form_field.html' with label="First name" field=invite_form.first_name errors=invite_form.first_name.errors required=True %}

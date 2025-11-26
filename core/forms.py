@@ -21,8 +21,8 @@ class SetupWizardForm(forms.Form):
         widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'username'})
     )
     email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'your@email.com (optional)'})
+        required=True,
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'you@email.com'})
     )
     first_name = forms.CharField(
         max_length=150,
@@ -61,10 +61,11 @@ class SetupWizardForm(forms.Form):
         return username
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if email:
-            if User.objects.filter(email__iexact=email).exists():
-                raise forms.ValidationError("This email is already registered.")
+        email = (self.cleaned_data.get('email') or '').strip()
+        if not email:
+            raise forms.ValidationError("Email is required to create a household owner account.")
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("This email is already registered.")
         return email
 
     def clean_password(self):
@@ -201,7 +202,7 @@ class AdditionalAccountForm(forms.Form):
     )
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = (self.cleaned_data.get('email') or '').strip()
         if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
@@ -224,6 +225,10 @@ class AdditionalAccountForm(forms.Form):
         cleaned_data = super().clean()
         if self.is_blank():
             return cleaned_data
+        role = (cleaned_data.get('role') or 'member')
+        email = (cleaned_data.get('email') or '').strip()
+        if role in ['admin', 'member'] and not email:
+            self.add_error('email', "Email is required for admins/parents.")
         if not (cleaned_data.get('username') or '').strip():
             raise forms.ValidationError("Username is required for each account.")
         return cleaned_data

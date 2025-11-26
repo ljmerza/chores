@@ -44,7 +44,7 @@
                     {% csrf_token %}
                     {{ formset.management_form }}
 
-                    <p class="text-gray-600 text-sm">Leave a row blank to skip it. Usernames are required so they can log in; emails and passwords are optional for now.</p>
+                    <p class="text-gray-600 text-sm">Leave a row blank to skip it. Usernames are required for login; admins/parents need an email, while kids can be created without one.</p>
 
                     <div class="space-y-6">
                         {% for form in formset %}
@@ -58,7 +58,7 @@
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     {% include 'components/form_field.html' with label="Username" field=form.username errors=form.username.errors for_id=form.username.id_for_label help_text="Pick something unique for sign in." wrapper_classes="text-sm" %}
-                                    {% include 'components/form_field.html' with label="Email (optional)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Add an email for owners; kids can be created without one." wrapper_classes="text-sm" %}
+                                    {% include 'components/form_field.html' with label="Email (admins/parents required)" field=form.email errors=form.email.errors for_id=form.email.id_for_label help_text="Admins/parents must have an email; kids can be created without one." wrapper_classes="text-sm" %}
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

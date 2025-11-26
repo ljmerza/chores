@@ -34,7 +34,6 @@ services:
       - DEBUG=True
       - SECRET_KEY=django-insecure-docker-dev-key-change-in-production
       - ALLOWED_HOSTS=*
-      - DATABASE_URL=mysql://choreuser:chorepass123@db:3306/choremanager
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=choremanager
@@ -72,7 +71,6 @@ services:
       - DEBUG=True
       - SECRET_KEY=django-insecure-docker-dev-key-change-in-production
       - ALLOWED_HOSTS=*
-      - DATABASE_URL=mysql://choreuser:chorepass123@db:3306/choremanager
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=choremanager
@@ -103,7 +101,6 @@ services:
       - DEBUG=True
       - SECRET_KEY=django-insecure-docker-dev-key-change-in-production
       - ALLOWED_HOSTS=*
-      - DATABASE_URL=mysql://choreuser:chorepass123@db:3306/choremanager
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=choremanager
@@ -133,7 +130,6 @@ services:
       - DEBUG=True
       - SECRET_KEY=django-insecure-docker-dev-key-change-in-production
       - ALLOWED_HOSTS=*
-      - DATABASE_URL=mysql://choreuser:chorepass123@db:3306/choremanager
       - MYSQL_HOST=db
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=choremanager

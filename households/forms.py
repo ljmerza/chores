@@ -58,7 +58,7 @@ class InviteMemberForm(forms.Form):
     )
     email = forms.EmailField(
         required=False,
-        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'member@email.com (optional)'})
+        widget=forms.EmailInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'member@email.com'})
     )
     role = forms.ChoiceField(
         choices=ROLE_CHOICES,
@@ -75,7 +75,7 @@ class InviteMemberForm(forms.Form):
         _apply_error_styles(self)
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = (self.cleaned_data.get('email') or '').strip()
         if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
@@ -93,3 +93,11 @@ class InviteMemberForm(forms.Form):
         if password:
             validate_password(password)
         return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role') or 'member'
+        email = (cleaned_data.get('email') or '').strip()
+        if role in ['admin', 'member'] and not email:
+            self.add_error('email', "Email is required for admins/parents.")
+        return cleaned_data
