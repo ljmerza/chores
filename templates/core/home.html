@@ -7,7 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
 <style>
-    body { background: radial-gradient(circle at 20% 20%, #eef6ed 0, #eef6ed 35%, #f7fbf5 60%, #ffffff 100%); font-family: 'Sora', 'Manrope', system-ui, sans-serif; }
+    body { background: radial-gradient(circle at 20% 20%, #eef6ed 0, #eef6ed 35%, #f7fbf5 60%, #ffffff 100%
+        ); font-family: 'Sora', 'Manrope', system-ui, sans-serif; }
     .hero-gradient { background: linear-gradient(135deg, #7FB77E 0%, #4F7D4A 45%, #3b5d38 100%); }
     .placeholder-box { border: 2px dashed rgba(255,255,255,0.7); border-radius: 18px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
     .placeholder-box.light { border-color: #d7e4d3; background: #f4f8f2; color: #62745d; }
@@ -394,5 +395,17 @@
         </div>
     </div>
     {% endif %}
+
+    <footer class="bg-gray-900 mt-16">
+        <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-200">
+            <p class="font-semibold text-white">Chore Manager</p>
+            <div class="flex flex-wrap gap-4">
+                <a href="#" class="hover:text-white">Privacy</a>
+                <a href="#" class="hover:text-white">Terms</a>
+                <a href="#" class="hover:text-white">FAQ</a>
+                <a href="#" class="hover:text-white">Contact</a>
+            </div>
+        </div>
+    </footer>
 </div>
 {% endblock %}
