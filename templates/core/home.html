@@ -2,6 +2,19 @@
 
 {% block title %}Home - Chore Manager{% endblock %}
 
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    body { background: radial-gradient(circle at 20% 20%, #eef6ed 0, #eef6ed 35%, #f7fbf5 60%, #ffffff 100%); font-family: 'Sora', 'Manrope', system-ui, sans-serif; }
+    .hero-gradient { background: linear-gradient(135deg, #7FB77E 0%, #4F7D4A 45%, #3b5d38 100%); }
+    .placeholder-box { border: 2px dashed rgba(255,255,255,0.7); border-radius: 18px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+    .placeholder-box.light { border-color: #d7e4d3; background: #f4f8f2; color: #62745d; }
+    .section-card { background: #fff; border: 1px solid #e5e8e1; box-shadow: 0 10px 40px rgba(42, 87, 52, 0.07); }
+</style>
+{% endblock %}
+
 {% block navbar %}
     {% include 'components/navbar.html' %}
 {% endblock %}
@@ -18,13 +31,119 @@
     {% url 'login' as login_url %}
     {% url 'household_signup' as create_url %}
     {% url 'invite_code' as invite_url %}
-    <div class="max-w-3xl mx-auto text-center bg-white rounded-2xl shadow-xl p-10">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Chore Manager</h1>
-        <p class="text-gray-600 mb-6">Create a household or join with an invite code to get started.</p>
-        <div class="flex flex-col md:flex-row items-center justify-center gap-3">
-            {% include 'components/button.html' with href=create_url label="Create household" variant="primary" size="lg" %}
-            {% include 'components/button.html' with href=invite_url label="Join with invite code" variant="secondary" size="lg" %}
-            {% include 'components/button.html' with href=login_url label="Login" variant="ghost" size="lg" %}
+    <div class="space-y-14">
+        <div class="relative overflow-hidden rounded-3xl hero-gradient text-white">
+            <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at 25% 20%, #ffffff 0, transparent 35%), radial-gradient(circle at 80% 10%, #c7e2c4 0, transparent 30%), radial-gradient(circle at 70% 70%, #d4e8d0 0, transparent 25%);"></div>
+            <div class="relative max-w-6xl mx-auto px-6 py-14 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                <div class="space-y-6">
+                    <p class="text-sm uppercase tracking-[0.35em] font-semibold text-white/80">Chore Manager</p>
+                    <h1 class="text-4xl md:text-5xl font-bold leading-tight">Run your household like a team—chores, points, and rewards in one place.</h1>
+                    <p class="text-lg text-white/85">Create a household, invite admins, members, or kids, and keep everyone on track with streaks, photo verification, and rewards.</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        {% include 'components/button.html' with href=create_url label="Create a household" variant="secondary" size="lg" %}
+                        {% include 'components/button.html' with href=invite_url label="Join with invite code" variant="ghost" size="lg" %}
+                        {% include 'components/button.html' with href=login_url label="Login" variant="ghost" size="lg" %}
+                    </div>
+                    <div class="flex flex-wrap gap-4 text-sm text-white/85">
+                        <span class="inline-flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full"><span class="text-xl">✅</span> Points, streaks, leaderboards</span>
+                        <span class="inline-flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full"><span class="text-xl">📸</span> Photo verification</span>
+                        <span class="inline-flex items-center gap-2 px-3 py-2 bg-white/10 rounded-full"><span class="text-xl">🎁</span> Rewards with approvals</span>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="placeholder-box w-full max-w-md h-72 flex items-center justify-center text-center px-6">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.3em] font-semibold mb-2">[[IMG_HERO_ILLUSTRATION]]</p>
+                            <p class="text-base">Drop in a hero graphic or blurred UI montage here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="section-card rounded-2xl p-6 space-y-2">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Step 1</p>
+                <h3 class="text-xl font-semibold text-gray-900">Create or join</h3>
+                <p class="text-sm text-gray-600">Start a household as an admin or verify an invite code to join an existing one.</p>
+            </div>
+            <div class="section-card rounded-2xl p-6 space-y-2">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Step 2</p>
+                <h3 class="text-xl font-semibold text-gray-900">Assign & complete</h3>
+                <p class="text-sm text-gray-600">Add recurring or one-time chores, track due dates, and submit with photos.</p>
+            </div>
+            <div class="section-card rounded-2xl p-6 space-y-2">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Step 3</p>
+                <h3 class="text-xl font-semibold text-gray-900">Earn & redeem</h3>
+                <p class="text-sm text-gray-600">Earn points, keep streaks alive, climb leaderboards, and redeem rewards.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            <div class="section-card rounded-3xl p-8 space-y-5">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Highlights</p>
+                <h2 class="text-2xl font-bold text-gray-900">Built for admins, members, and kids</h2>
+                <ul class="space-y-3 text-gray-700 text-sm leading-relaxed">
+                    <li class="flex gap-3"><span class="text-xl">🧭</span> Roles: admin/member/child, invite codes, and per-household scores.</li>
+                    <li class="flex gap-3"><span class="text-xl">⏰</span> Scheduling: recurring chores, due dates, and streak bonuses.</li>
+                    <li class="flex gap-3"><span class="text-xl">🔒</span> Approvals: rewards with pending/approved/denied/fulfilled states.</li>
+                    <li class="flex gap-3"><span class="text-xl">🔔</span> Notifications: in-app now; Home Assistant + other channels ready to wire.</li>
+                </ul>
+                <div class="pt-2 flex flex-wrap gap-3">
+                    {% include 'components/button.html' with href=create_url label="Create a household" variant="primary" size="md" %}
+                    {% include 'components/button.html' with href=invite_url label="Use an invite code" variant="secondary" size="md" %}
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="placeholder-box light h-48 flex items-center justify-center text-center px-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] font-semibold mb-1">[[IMG_DASHBOARD_SCREENSHOT]]</p>
+                        <p class="text-sm text-gray-700">Dashboard preview: points, leaderboard, active chores.</p>
+                    </div>
+                </div>
+                <div class="placeholder-box light h-48 flex items-center justify-center text-center px-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] font-semibold mb-1">[[IMG_CHORE_FLOW]]</p>
+                        <p class="text-sm text-gray-700">Chore claim/complete flow with photo verification.</p>
+                    </div>
+                </div>
+                <div class="placeholder-box light h-48 flex items-center justify-center text-center px-4 md:col-span-2">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] font-semibold mb-1">[[IMG_REWARDS_SCREENSHOT]]</p>
+                        <p class="text-sm text-gray-700">Rewards catalog with stock, approvals, and per-user limits.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="section-card rounded-2xl p-7 space-y-3">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">For admins/parents</p>
+                <h3 class="text-xl font-semibold text-gray-900">Control and clarity</h3>
+                <p class="text-sm text-gray-600">Manage roles, approve redemptions, and keep at least one admin in every household.</p>
+            </div>
+            <div class="section-card rounded-2xl p-7 space-y-3">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">For members/kids</p>
+                <h3 class="text-xl font-semibold text-gray-900">Motivation built in</h3>
+                <p class="text-sm text-gray-600">See active chores, keep streaks alive, and redeem rewards with clear progress.</p>
+            </div>
+            <div class="section-card rounded-2xl p-7 space-y-3">
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Integrations</p>
+                <h3 class="text-xl font-semibold text-gray-900">Ready for reminders</h3>
+                <p class="text-sm text-gray-600">Home Assistant notify works when configured; email/SMS/push are queued up next.</p>
+            </div>
+        </div>
+
+        <div class="section-card rounded-3xl p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+                <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Ready to begin?</p>
+                <h3 class="text-2xl font-bold text-gray-900 mt-2">Create a household or join with your invite code.</h3>
+                <p class="text-sm text-gray-600 mt-2">It takes under a minute to start. Invite more admins later, or head straight to your dashboard.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                {% include 'components/button.html' with href=create_url label="Create a household" variant="primary" size="lg" %}
+                {% include 'components/button.html' with href=invite_url label="Join with invite code" variant="secondary" size="lg" %}
+            </div>
         </div>
     </div>
     {% elif not households %}
