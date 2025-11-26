@@ -28,6 +28,9 @@ from core.views import (
     AdminHubView,
     SetupWizardView,
     SetupWizardMembersView,
+    PrivacyView,
+    TermsView,
+    FAQView,
     logout_view,
     claim_chore,
     complete_chore,
@@ -61,6 +64,9 @@ urlpatterns = [
     path('rewards/manage/', ManageRewardsView.as_view(), name='manage_rewards'),
     path('rewards/<int:pk>/edit/', EditRewardView.as_view(), name='edit_reward'),
     path('rewards/create/', CreateRewardView.as_view(), name='create_reward'),
+    path('privacy/', PrivacyView.as_view(), name='privacy'),
+    path('terms/', TermsView.as_view(), name='terms'),
+    path('faq/', FAQView.as_view(), name='faq'),
     path('', HomeView.as_view(), name='home'),
 ]
 

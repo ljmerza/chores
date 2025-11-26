@@ -76,6 +76,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.contact_email',
             ],
         },
     },
@@ -153,6 +154,7 @@ AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+CONTACT_EMAIL = config('CONTACT_EMAIL', default='')
 
 # REST Framework Configuration
 REST_FRAMEWORK = {

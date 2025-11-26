@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Terms - Chore Manager{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-12">
+    <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-12 space-y-8">
+        <div class="space-y-3">
+            <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Terms</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Chore Manager Terms (draft)</h1>
+            <p class="text-gray-600 text-sm">Update this draft to match your deployment, hosting, and legal guidance before publishing.</p>
+        </div>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">What this app is</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">Chore Manager lets households manage chores, points, streaks, rewards, and roles (admin/member/child). Households are invite-based; admins manage memberships and approvals.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Accounts and roles</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Account creation requires a username; admins/parents also need an email. Child accounts can be created without email.</li>
+                <li>Joining a household requires a valid invite code. Admins can invite/remove members and adjust roles.</li>
+                <li>Users must keep credentials secure and use the app lawfully.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">User content and responsibilities</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Households own and control their content: chores, rewards, photos, and other entries.</li>
+                <li>Only upload content you have rights to; no unlawful, abusive, or infringing material.</li>
+                <li>Photo uploads for verification are stored; admins can manage/delete via app flows (if available) or by request.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Privacy overview</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">We only collect the info you enter (account fields) and in-app activity (chores, points, rewards, notifications, optional photos). Child accounts can be created without email; no additional data is collected for children. See the <a href="{% url 'privacy' %}" class="text-primary font-semibold hover:underline">Privacy</a> page for details.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Availability and changes</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>The service/software is provided “as is,” with no uptime guarantees.</li>
+                <li>Features may change; check release notes for updates.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Security and API</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Passwords are hashed using Django defaults. Household access is invite-based.</li>
+                <li>API authentication is not implemented in the current code—limit deployments accordingly until auth is added.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Liability and warranty</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">Provided “as is” without warranties; liability is limited to the maximum extent allowed by law.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Termination and data handling</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">If an account or household is removed, associated data may be deleted. Define and document your deletion/export process for production use.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Contact</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">Questions about these terms? Email <a href="mailto:{{ CONTACT_EMAIL }}" class="text-primary font-semibold hover:underline">{{ CONTACT_EMAIL }}</a>.</p>
+        </section>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+            {% include 'components/button.html' with href='/' label='Back home' variant='secondary' %}
+            <a href="mailto:{{ CONTACT_EMAIL }}" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 text-gray-800 font-semibold hover:bg-gray-100">Contact</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="py-10">
+<div class="pt-10">
     {% if messages %}
     <div class="max-w-6xl mx-auto mb-4">
         {% include 'components/messages.html' %}
@@ -396,16 +396,18 @@
     </div>
     {% endif %}
 
-    <footer class="bg-gray-900 mt-16">
-        <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-200">
-            <p class="font-semibold text-white">Chore Manager</p>
-            <div class="flex flex-wrap gap-4">
-                <a href="#" class="hover:text-white">Privacy</a>
-                <a href="#" class="hover:text-white">Terms</a>
-                <a href="#" class="hover:text-white">FAQ</a>
-                <a href="#" class="hover:text-white">Contact</a>
+    <div class="mt-16 relative left-1/2 -translate-x-1/2 w-screen pb-0">
+        <footer class="bg-gray-900">
+            <div class="max-w-6xl mx-auto py-8 px-6 sm:px-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-200">
+                <p class="font-semibold text-white">Chore Manager</p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="{% url 'privacy' %}" class="hover:text-white">Privacy</a>
+                    <a href="{% url 'terms' %}" class="hover:text-white">Terms</a>
+                    <a href="{% url 'faq' %}" class="hover:text-white">FAQ</a>
+                    <a href="mailto:{{ CONTACT_EMAIL }}" class="hover:text-white">Contact</a>
+                </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </div>
 </div>
 {% endblock %}

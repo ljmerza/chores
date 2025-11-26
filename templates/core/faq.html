@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ - Chore Manager{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-12">
+    <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-12 space-y-8">
+        <div class="space-y-3">
+            <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">FAQ</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Frequently asked questions</h1>
+            <p class="text-gray-600 text-sm">Draft copy—tune for your deployment and policies before launch.</p>
+        </div>
+
+        <div class="space-y-6">
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">What is Chore Manager?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">A multi-household chore and rewards app with roles (admin/member/child), points, streaks, approvals, and invite-based access.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">How do I start?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Create a household as an admin or verify an invite code to join. Add members, set chores (one-time or recurring), and create rewards.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Do you collect data?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Only the info you enter for accounts (username, name, email for admins/parents) plus in-app activity (chores, points, rewards, notifications, optional photos). No analytics/ads tracking in the code. Child accounts can be created without email; no extra data is collected from children beyond what admins enter. See <a href="{% url 'privacy' %}" class="text-primary font-semibold hover:underline">Privacy</a> for details.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Are child accounts private?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Yes. The app does not gather additional data from children. Admins/parents control what is entered and should obtain any required consent under local laws.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Is there API access?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">API authentication is not implemented yet; current endpoints are open. Limit deployments accordingly until auth is added.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">How are reminders sent?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">In-app notifications work. Home Assistant notify can be configured. Email/SMS/push channels are stubbed pending implementation.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">How do rewards approvals work?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Rewards can require approval. Redemptions move through pending/approved/denied/fulfilled/cancelled with audit fields.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Can I self-host?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Yes. Docker compose is provided. Replace default secrets and secure your deployment before exposing it.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Can I delete or export my data?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Define and document a deletion/export process for production use. Until then, requests can be handled manually via the contact email.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-lg font-semibold text-gray-900">Where is data stored?</h2>
+                <p class="text-sm text-gray-700 leading-relaxed">Specify hosting region/provider for your deployment. The code ships without third-party marketing trackers.</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+            {% include 'components/button.html' with href='/' label='Back home' variant='secondary' %}
+            <a href="mailto:{{ CONTACT_EMAIL }}" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 text-gray-800 font-semibold hover:bg-gray-100">Contact</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

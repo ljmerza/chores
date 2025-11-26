@@ -655,3 +655,24 @@ def redeem_reward(request, pk):
 
     home_url = reverse('home')
     return redirect(f"{home_url}?household={reward.household.id}")
+
+
+class PrivacyView(TemplateView):
+    """
+    Static privacy statement page.
+    """
+    template_name = 'core/privacy.html'
+
+
+class TermsView(TemplateView):
+    """
+    Static terms page.
+    """
+    template_name = 'core/terms.html'
+
+
+class FAQView(TemplateView):
+    """
+    Static FAQ page.
+    """
+    template_name = 'core/faq.html'

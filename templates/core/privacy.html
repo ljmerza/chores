@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy - Chore Manager{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-12">
+    <div class="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 md:p-12 space-y-8">
+        <div class="space-y-3">
+            <p class="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Privacy</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">How Chore Manager handles your data</h1>
+            <p class="text-gray-600 text-sm">This is a product copy draft. Update to match your deployment, hosting, and legal review before publishing.</p>
+        </div>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">What we collect</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Account info you provide: username (required), first/last name (optional), email (required for admins/parents; optional/empty for child accounts), and password (stored as a hash).</li>
+                <li>Household data: household name/description, invite codes, memberships/roles.</li>
+                <li>In-app activity: chores, due dates, status timestamps, points, streaks, rewards, notifications, and optional photos for verification.</li>
+                <li>Integrations (optional): Home Assistant notify targets if you configure them. Email/SMS/push are not implemented yet.</li>
+                <li>Cookies: Django session cookie for authentication; no tracking pixels or ad cookies are built into the app.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Children and household accounts</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Child accounts can be created without an email address. The app does not collect additional data from children beyond what admins/parents enter.</li>
+                <li>Household admins/parents control what they enter for children and are responsible for any required consent under local laws.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">What we don’t do</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>No ads or third-party marketing trackers are included in the codebase.</li>
+                <li>We don’t sell your data.</li>
+                <li>No analytics SDKs are shipped by default.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Security and access</h2>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 text-sm leading-relaxed">
+                <li>Passwords are stored as hashes using Django’s defaults.</li>
+                <li>Household access is invite-based; admins control memberships and roles.</li>
+                <li>API auth is not implemented in the current code—limit deployments accordingly until authentication is added.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Retention and removal</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">Data is retained while accounts/households exist. Define and document your deletion and export process for production deployments, and honor requests sent to the contact address below.</p>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xl font-semibold text-gray-900">Questions or requests</h2>
+            <p class="text-sm text-gray-700 leading-relaxed">For privacy questions or to request data deletion/export, email <a href="mailto:{{ CONTACT_EMAIL }}" class="text-primary font-semibold hover:underline">{{ CONTACT_EMAIL }}</a>.</p>
+        </section>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+            {% include 'components/button.html' with href='/' label='Back home' variant='secondary' %}
+            <a href="mailto:{{ CONTACT_EMAIL }}" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 text-gray-800 font-semibold hover:bg-gray-100">Contact privacy</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
