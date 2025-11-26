@@ -396,18 +396,6 @@
     </div>
     {% endif %}
 
-    <div class="mt-16 relative left-1/2 -translate-x-1/2 w-screen pb-0">
-        <footer class="bg-gray-900">
-            <div class="max-w-6xl mx-auto py-8 px-6 sm:px-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-200">
-                <p class="font-semibold text-white">Chore Manager</p>
-                <div class="flex flex-wrap gap-4">
-                    <a href="{% url 'privacy' %}" class="hover:text-white">Privacy</a>
-                    <a href="{% url 'terms' %}" class="hover:text-white">Terms</a>
-                    <a href="{% url 'faq' %}" class="hover:text-white">FAQ</a>
-                    <a href="mailto:{{ CONTACT_EMAIL }}" class="hover:text-white">Contact</a>
-                </div>
-            </div>
-        </footer>
-    </div>
+    {% include 'components/footer.html' %}
 </div>
 {% endblock %}

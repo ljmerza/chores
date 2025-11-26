@@ -1,10 +1,6 @@
-{% extends 'base.html' %}
+{% extends 'core/marketing_base.html' %}
 
 {% block title %}Terms - Chore Manager{% endblock %}
-
-{% block navbar %}
-    {% include 'components/navbar.html' %}
-{% endblock %}
 
 {% block content %}
 <div class="py-12">
@@ -80,4 +76,5 @@
         </div>
     </div>
 </div>
+{% include 'components/footer.html' %}
 {% endblock %}
