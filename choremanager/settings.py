@@ -235,3 +235,10 @@ HA_BASE_URL = config('HA_BASE_URL', default='')
 HA_LONG_LIVED_TOKEN = config('HA_LONG_LIVED_TOKEN', default='')
 HA_DEFAULT_NOTIFY_TARGET = config('HA_DEFAULT_NOTIFY_TARGET', default='')
 HA_VERIFY_SSL = config('HA_VERIFY_SSL', default=True, cast=bool)
+
+# Twilio SMS notifications
+TWILIO_ENABLED = config('TWILIO_ENABLED', default=False, cast=bool)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_FROM_NUMBER = config('TWILIO_FROM_NUMBER', default='')
+TWILIO_MAX_DAILY_SENDS = config('TWILIO_MAX_DAILY_SENDS', default=1000, cast=int)

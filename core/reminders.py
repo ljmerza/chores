@@ -116,10 +116,155 @@ def send_email(reminder: ReminderTarget) -> None:
 
 def send_sms(reminder: ReminderTarget) -> None:
     """
-    TODO: integrate SMS provider (e.g., Twilio).
-    - Guard against long messages; include short action_link.
+    Send SMS notification via Twilio.
+    - Validates user opt-in and Twilio configuration
+    - Enforces 160 character limit for single-segment SMS
+    - Tracks daily send limits to control costs
     """
-    raise NotImplementedError("SMS reminder sending not implemented.")
+    from django.conf import settings
+    from django.core.cache import cache
+    from django.utils import timezone
+
+    # Check if Twilio is enabled
+    if not getattr(settings, 'TWILIO_ENABLED', False):
+        logger.debug(
+            "Twilio SMS disabled in settings. user_id=%s household_id=%s",
+            reminder.user_id,
+            reminder.household_id,
+        )
+        return
+
+    # Validate Twilio credentials
+    account_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '')
+    auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
+    from_number = getattr(settings, 'TWILIO_FROM_NUMBER', '')
+
+    if not (account_sid and auth_token and from_number):
+        logger.warning(
+            "Twilio credentials not configured. user_id=%s household_id=%s",
+            reminder.user_id,
+            reminder.household_id,
+        )
+        return
+
+    # Validate phone number
+    if not reminder.phone_e164:
+        logger.debug(
+            "No phone number for user. user_id=%s household_id=%s",
+            reminder.user_id,
+            reminder.household_id,
+        )
+        return
+
+    # Check user opt-in status (requires fetching user from DB)
+    try:
+        from core.models import User
+        user = User.objects.get(id=reminder.user_id)
+
+        if not user.sms_notifications_enabled:
+            logger.debug(
+                "SMS notifications disabled for user. user_id=%s household_id=%s",
+                reminder.user_id,
+                reminder.household_id,
+            )
+            return
+
+        if user.sms_opted_out_at:
+            logger.info(
+                "User opted out of SMS at %s. user_id=%s household_id=%s",
+                user.sms_opted_out_at,
+                reminder.user_id,
+                reminder.household_id,
+            )
+            return
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "Failed to fetch user for SMS opt-in check. user_id=%s household_id=%s error=%s",
+            reminder.user_id,
+            reminder.household_id,
+            exc,
+        )
+        return
+
+    # Check daily send limit
+    max_daily_sends = getattr(settings, 'TWILIO_MAX_DAILY_SENDS', 1000)
+    cache_key = f"twilio_daily_sends_{timezone.now().date()}"
+    daily_count = cache.get(cache_key, 0)
+
+    if daily_count >= max_daily_sends:
+        logger.warning(
+            "Daily SMS send limit reached (%s/%s). user_id=%s household_id=%s",
+            daily_count,
+            max_daily_sends,
+            reminder.user_id,
+            reminder.household_id,
+        )
+        return
+
+    # Format message with 160 character limit for single-segment SMS
+    message_parts = []
+    if reminder.subject:
+        message_parts.append(reminder.subject)
+    if reminder.message:
+        message_parts.append(reminder.message)
+
+    formatted_message = ": ".join(message_parts) if len(message_parts) > 1 else message_parts[0] if message_parts else ""
+
+    # Add action link if available and space permits
+    if reminder.action_link:
+        link_text = f" {reminder.action_link}"
+        if len(formatted_message) + len(link_text) <= 160:
+            formatted_message += link_text
+        else:
+            # Truncate message to fit link
+            max_message_len = 160 - len(link_text)
+            formatted_message = formatted_message[:max_message_len-3] + "..." + link_text
+    else:
+        # Just truncate message if no link
+        if len(formatted_message) > 160:
+            formatted_message = formatted_message[:157] + "..."
+
+    # Send via Twilio
+    try:
+        from twilio.rest import Client
+        from twilio.base.exceptions import TwilioRestException
+
+        client = Client(account_sid, auth_token)
+        message = client.messages.create(
+            from_=from_number,
+            to=reminder.phone_e164,
+            body=formatted_message,
+        )
+
+        # Increment daily send counter (expires at end of day)
+        cache.set(cache_key, daily_count + 1, 86400)  # 24 hours
+
+        logger.info(
+            "SMS sent successfully. user_id=%s household_id=%s to=%s sid=%s status=%s",
+            reminder.user_id,
+            reminder.household_id,
+            reminder.phone_e164,
+            message.sid,
+            message.status,
+        )
+
+    except TwilioRestException as exc:
+        logger.error(
+            "Twilio API error. user_id=%s household_id=%s to=%s code=%s message=%s",
+            reminder.user_id,
+            reminder.household_id,
+            reminder.phone_e164,
+            exc.code,
+            exc.msg,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "Failed to send SMS. user_id=%s household_id=%s to=%s error=%s",
+            reminder.user_id,
+            reminder.household_id,
+            reminder.phone_e164,
+            exc,
+        )
 
 
 def send_homeassistant_notify(reminder: ReminderTarget) -> None:

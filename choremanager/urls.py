@@ -34,7 +34,8 @@ from core.views import (
     logout_view,
     claim_chore,
     complete_chore,
-    redeem_reward
+    redeem_reward,
+    twilio_sms_webhook
 )
 from chores.views import CreateChoreView, EditChoreView, ManageChoresView, ManageNotificationsView
 from households.views import ManageHouseholdView
@@ -67,6 +68,7 @@ urlpatterns = [
     path('privacy/', PrivacyView.as_view(), name='privacy'),
     path('terms/', TermsView.as_view(), name='terms'),
     path('faq/', FAQView.as_view(), name='faq'),
+    path('webhooks/twilio/sms/', twilio_sms_webhook, name='twilio_sms_webhook'),
     path('', HomeView.as_view(), name='home'),
 ]
 

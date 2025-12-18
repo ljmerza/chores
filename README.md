@@ -92,6 +92,55 @@ docker-compose down -v
   - `scan_due_items`: finds chores/instances that are due soon or overdue and emits notifications; overdue instances are marked `expired`.
   - `generate_recurring_instances`: placeholder that ensures recurring chores have an upcoming instance.
 
+## Notification Channels
+
+Chore Manager supports multiple notification channels for reminders and alerts:
+
+### In-App Notifications
+- Always enabled for all users
+- Viewable in the application interface
+- Tracks chore assignments, completions, and reward redemptions
+
+### SMS Notifications (Twilio)
+SMS notifications can be enabled via Twilio integration:
+
+**Setup:**
+1. Create a Twilio account at [twilio.com](https://www.twilio.com)
+2. Provision a phone number in your Twilio console
+3. Get your Account SID and Auth Token from the Twilio console
+4. Add credentials to your `.env` file:
+   ```env
+   TWILIO_ENABLED=True
+   TWILIO_ACCOUNT_SID=your_account_sid_here
+   TWILIO_AUTH_TOKEN=your_auth_token_here
+   TWILIO_FROM_NUMBER=+15551234567
+   TWILIO_MAX_DAILY_SENDS=1000
+   ```
+5. Restart the application to apply changes
+
+**Configuration:**
+- Admins can configure phone numbers and SMS preferences via Admin Hub > Manage Notifications
+- Phone numbers must be in E.164 format (e.g., +12025551234)
+- Users can opt-in/opt-out of SMS notifications
+- Reply "STOP" to any SMS to unsubscribe, or "START" to re-subscribe
+- Cost control: Daily send limits prevent unexpected charges
+
+**Webhook Setup:**
+Configure the Twilio webhook for opt-out handling:
+- Webhook URL: `https://your-domain.com/webhooks/twilio/sms/`
+- Method: HTTP POST
+- This enables automatic handling of STOP/START keywords
+
+**Pricing:**
+- Twilio charges per SMS sent (~$0.0079 USD for US domestic)
+- Monitor usage in the Twilio console
+- Set billing alerts in your Twilio account settings
+
+### Home Assistant Notifications
+- Configure per Admin Hub > Manage Notifications
+- Supports Home Assistant notify services for push notifications
+- Requires HA base URL, long-lived access token, and notify target
+
 ## Local Development (without Docker)
 
 ### Prerequisites

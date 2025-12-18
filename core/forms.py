@@ -346,3 +346,84 @@ class HomeAssistantSettingsForm(forms.ModelForm):
             'ha_default_target': forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'notify.mobile_app_default'}),
             'ha_verify_ssl': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary'}),
         }
+
+
+class SMSNotificationForm(forms.Form):
+    """
+    Edit per-user SMS notification settings for a household.
+    """
+    PHONE_FIELD_PREFIX = "phone_number"
+    SMS_ENABLED_PREFIX = "sms_enabled"
+
+    def __init__(self, *args, users=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.users = users or []
+        for user in self.users:
+            phone_field_name = self.phone_field_name(user.id)
+            enabled_field_name = self.sms_enabled_field_name(user.id)
+
+            # Phone number field
+            self.fields[phone_field_name] = forms.CharField(
+                required=False,
+                max_length=20,
+                label=f"{user.display_name} - Phone",
+                widget=forms.TextInput(attrs={
+                    'class': TAILWIND_INPUT_CLASS,
+                    'placeholder': '+12025551234',
+                }),
+                help_text="E.164 format (e.g., +12025551234)",
+            )
+            if getattr(user, "phone_number", None):
+                self.initial[phone_field_name] = user.phone_number
+
+            # SMS enabled checkbox
+            self.fields[enabled_field_name] = forms.BooleanField(
+                required=False,
+                label=f"{user.display_name} - Enable SMS",
+                widget=forms.CheckboxInput(attrs={
+                    'class': 'h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary'
+                }),
+                help_text="User must opt-in to receive SMS",
+            )
+            self.initial[enabled_field_name] = getattr(user, "sms_notifications_enabled", False)
+
+    @classmethod
+    def phone_field_name(cls, user_id: int) -> str:
+        return f"{cls.PHONE_FIELD_PREFIX}_{user_id}"
+
+    @classmethod
+    def sms_enabled_field_name(cls, user_id: int) -> str:
+        return f"{cls.SMS_ENABLED_PREFIX}_{user_id}"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Validate E.164 format for phone numbers
+        import re
+        e164_pattern = re.compile(r'^\+[1-9]\d{1,14}$')
+
+        for user in self.users:
+            phone_field = self.phone_field_name(user.id)
+            phone = cleaned_data.get(phone_field, '').strip()
+
+            if phone and not e164_pattern.match(phone):
+                self.add_error(
+                    phone_field,
+                    "Phone number must be in E.164 format (e.g., +12025551234)"
+                )
+
+        return cleaned_data
+
+    def cleaned_phone_numbers(self) -> Dict[int, str]:
+        """Return dict of user_id -> phone_number"""
+        phones: Dict[int, str] = {}
+        for user in self.users:
+            raw = self.cleaned_data.get(self.phone_field_name(user.id), "") or ""
+            phones[user.id] = raw.strip()
+        return phones
+
+    def cleaned_sms_enabled(self) -> Dict[int, bool]:
+        """Return dict of user_id -> sms_enabled"""
+        enabled: Dict[int, bool] = {}
+        for user in self.users:
+            enabled[user.id] = self.cleaned_data.get(self.sms_enabled_field_name(user.id), False)
+        return enabled
