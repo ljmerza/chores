@@ -676,3 +676,107 @@ class FAQView(TemplateView):
     Static FAQ page.
     """
     template_name = 'core/faq.html'
+
+
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+
+@csrf_exempt
+@require_POST
+def twilio_sms_webhook(request):
+    """
+    Webhook endpoint for Twilio inbound SMS messages.
+    Handles STOP/START keyword opt-out/opt-in.
+
+    Expected POST parameters from Twilio:
+    - From: sender's phone number (E.164)
+    - Body: message body
+    - (optional) MessageSid: Twilio message SID
+    """
+    from django.conf import settings
+    from django.utils import timezone
+    from twilio.request_validator import RequestValidator
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    # Validate request is from Twilio using signature
+    auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
+    if auth_token:
+        validator = RequestValidator(auth_token)
+        url = request.build_absolute_uri()
+
+        # Get signature from header
+        signature = request.META.get('HTTP_X_TWILIO_SIGNATURE', '')
+
+        # Twilio sends POST params, not JSON
+        post_params = dict(request.POST.items())
+
+        if not validator.validate(url, post_params, signature):
+            logger.warning("Invalid Twilio signature for webhook request")
+            return HttpResponse(status=403)
+
+    # Extract message details
+    from_number = request.POST.get('From', '').strip()
+    message_body = request.POST.get('Body', '').strip().upper()
+
+    if not from_number:
+        return HttpResponse(status=400)
+
+    # Find user by phone number
+    try:
+        user = User.objects.get(phone_number=from_number)
+    except User.DoesNotExist:
+        logger.info(f"Received SMS from unknown number: {from_number}")
+        # Respond with generic message
+        return HttpResponse(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Response>'
+            '<Message>This number is not registered with our system.</Message>'
+            '</Response>',
+            content_type='text/xml'
+        )
+
+    # Handle STOP keywords (opt-out)
+    stop_keywords = ['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT']
+    if any(keyword in message_body for keyword in stop_keywords):
+        user.sms_opted_out_at = timezone.now()
+        user.sms_notifications_enabled = False
+        user.save(update_fields=['sms_opted_out_at', 'sms_notifications_enabled'])
+
+        logger.info(f"User {user.id} opted out of SMS via {message_body}")
+
+        return HttpResponse(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Response>'
+            '<Message>You have been unsubscribed from SMS notifications. Reply START to opt back in.</Message>'
+            '</Response>',
+            content_type='text/xml'
+        )
+
+    # Handle START keywords (opt-in)
+    start_keywords = ['START', 'SUBSCRIBE', 'YES', 'UNSTOP']
+    if any(keyword in message_body for keyword in start_keywords):
+        user.sms_opted_out_at = None
+        user.sms_notifications_enabled = True
+        user.save(update_fields=['sms_opted_out_at', 'sms_notifications_enabled'])
+
+        logger.info(f"User {user.id} opted in to SMS via {message_body}")
+
+        return HttpResponse(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Response>'
+            '<Message>You have been subscribed to SMS notifications. Reply STOP to unsubscribe.</Message>'
+            '</Response>',
+            content_type='text/xml'
+        )
+
+    # For other messages, just acknowledge
+    logger.info(f"Received SMS from {from_number}: {message_body}")
+    return HttpResponse(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Response></Response>',
+        content_type='text/xml'
+    )

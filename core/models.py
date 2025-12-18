@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import RegexValidator
 from django.db import models
 
 
@@ -69,6 +70,31 @@ class User(AbstractUser):
         blank=True,
         help_text="Home Assistant notify target (e.g., notify.mobile_app_bobs_iphone)",
     )
+
+    # SMS notification fields
+    phone_number = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\+[1-9]\d{1,14}$',
+                message='Phone number must be in E.164 format (e.g., +12025551234)',
+            )
+        ],
+        help_text="Phone number in E.164 format for SMS notifications",
+    )
+    sms_notifications_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable SMS notifications (requires opt-in)",
+    )
+    sms_opted_out_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when user opted out of SMS via STOP keyword",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

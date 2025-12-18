@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
-from core.forms import HomeAssistantSettingsForm, HomeAssistantTargetForm
+from core.forms import HomeAssistantSettingsForm, HomeAssistantTargetForm, SMSNotificationForm
 from .models import Chore, ChoreRotation, Notification
 from .forms import CreateChoreForm
 
@@ -338,10 +338,18 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
 
         ha_form = kwargs.get('ha_form') or self._ha_form()
         ha_settings_form = kwargs.get('ha_settings_form') or self._ha_settings_form()
+        sms_form = kwargs.get('sms_form') or self._sms_form()
+
         ha_rows = []
         for membership in self.memberships:
             field_name = HomeAssistantTargetForm.field_name(membership.user.id)
             ha_rows.append((membership, ha_form[field_name]))
+
+        sms_rows = []
+        for membership in self.memberships:
+            phone_field_name = SMSNotificationForm.phone_field_name(membership.user.id)
+            enabled_field_name = SMSNotificationForm.sms_enabled_field_name(membership.user.id)
+            sms_rows.append((membership, sms_form[phone_field_name], sms_form[enabled_field_name]))
 
         context.update({
             'households': self.households,
@@ -354,6 +362,8 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
             'ha_form': ha_form,
             'ha_settings_form': ha_settings_form,
             'ha_rows': ha_rows,
+            'sms_form': sms_form,
+            'sms_rows': sms_rows,
             'memberships': self.memberships,
         })
         return context
@@ -361,10 +371,14 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         target_form = self._ha_form()
         settings_form = self._ha_settings_form(post=True)
-        if target_form.is_valid() and settings_form.is_valid():
+        sms_form = self._sms_form()
+
+        if target_form.is_valid() and settings_form.is_valid() and sms_form.is_valid():
             settings_form.save()
             users_by_id = {m.user.id: m.user for m in self.memberships}
-            updates = 0
+
+            # Handle Home Assistant updates
+            ha_updates = 0
             for user_id, target in target_form.cleaned_targets().items():
                 user = users_by_id.get(user_id)
                 if not user:
@@ -374,18 +388,51 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
                 if normalized != current:
                     user.homeassistant_target = normalized or None
                     user.save(update_fields=["homeassistant_target"])
-                    updates += 1
+                    ha_updates += 1
 
-            if updates:
-                messages.success(request, f"Saved Home Assistant mappings ({updates} updated).")
-            else:
-                messages.info(request, "No changes to Home Assistant mappings.")
-            messages.success(request, "Household Home Assistant settings saved.")
+            # Handle SMS updates
+            sms_updates = 0
+            phone_numbers = sms_form.cleaned_phone_numbers()
+            sms_enabled = sms_form.cleaned_sms_enabled()
+
+            for user_id, phone in phone_numbers.items():
+                user = users_by_id.get(user_id)
+                if not user:
+                    continue
+
+                normalized_phone = phone or None
+                enabled = sms_enabled.get(user_id, False)
+
+                # Track if any changes occur
+                changed = False
+                update_fields = []
+
+                if user.phone_number != normalized_phone:
+                    user.phone_number = normalized_phone
+                    update_fields.append("phone_number")
+                    changed = True
+
+                if user.sms_notifications_enabled != enabled:
+                    user.sms_notifications_enabled = enabled
+                    update_fields.append("sms_notifications_enabled")
+                    changed = True
+
+                if changed:
+                    user.save(update_fields=update_fields)
+                    sms_updates += 1
+
+            if ha_updates:
+                messages.success(request, f"Saved Home Assistant mappings ({ha_updates} updated).")
+            if sms_updates:
+                messages.success(request, f"Saved SMS notification settings ({sms_updates} updated).")
+            if not ha_updates and not sms_updates:
+                messages.info(request, "No changes to notification settings.")
+            messages.success(request, "Household notification settings saved.")
 
             household_param = f"?household={self.selected_household.id}" if self.selected_household else ""
             return redirect(f"{reverse('manage_notifications')}{household_param}")
 
-        context = self.get_context_data(ha_form=target_form, ha_settings_form=settings_form)
+        context = self.get_context_data(ha_form=target_form, ha_settings_form=settings_form, sms_form=sms_form)
         return self.render_to_response(context)
 
     def _ha_form(self):
@@ -398,3 +445,9 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
         if post or self.request.method == "POST":
             return HomeAssistantSettingsForm(self.request.POST, instance=self.selected_household)
         return HomeAssistantSettingsForm(instance=self.selected_household)
+
+    def _sms_form(self):
+        users = [m.user for m in self.memberships]
+        if self.request.method == "POST":
+            return SMSNotificationForm(self.request.POST, users=users)
+        return SMSNotificationForm(users=users)
