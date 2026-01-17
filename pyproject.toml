@@ -1,0 +1,23 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "choremanager.settings"
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+addopts = "--cov=core --cov=chores --cov=households --cov=rewards --cov-report=term-missing --cov-fail-under=70"
+testpaths = ["core", "chores", "households", "rewards"]
+
+[tool.coverage.run]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "manage.py",
+    "choremanager/wsgi.py",
+    "choremanager/asgi.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

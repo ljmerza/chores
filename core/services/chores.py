@@ -7,7 +7,7 @@ from django.utils import timezone
 from core.models import User
 from core.services.notifications import create_notification
 from core.services.points import PointChangeResult, adjust_points
-from chores.models import ChoreInstance
+from chores.models import Chore, ChoreInstance
 
 
 class ChoreStateError(Exception):
@@ -16,6 +16,10 @@ class ChoreStateError(Exception):
 
 class MissingAssigneeError(Exception):
     """Raised when a chore instance cannot determine an assignee/claimer."""
+
+
+class ChoreClaimError(Exception):
+    """Raised when a chore cannot be claimed."""
 
 
 @dataclass
@@ -84,3 +88,44 @@ def complete_chore_instance(
     )
 
     return ChoreCompletionResult(instance=instance, points_result=points_result)
+
+
+@dataclass
+class ChoreClaimResult:
+    chore: Chore
+    user: User
+
+
+def claim_global_chore(
+    *,
+    chore_id: int,
+    user: User,
+) -> ChoreClaimResult:
+    """
+    Atomically claim a global chore for a user.
+
+    Args:
+        chore_id: The ID of the chore to claim
+        user: The user claiming the chore
+
+    Returns:
+        ChoreClaimResult with the claimed chore and user
+
+    Raises:
+        ChoreClaimError: If the chore is not available for claiming
+    """
+    with transaction.atomic():
+        chore = Chore.objects.select_for_update().filter(
+            pk=chore_id,
+            assignment_type='global',
+            status='pending',
+        ).first()
+
+        if not chore:
+            raise ChoreClaimError("Chore is not available for claiming")
+
+        chore.assigned_to = user
+        chore.status = 'in_progress'
+        chore.save(update_fields=['assigned_to', 'status'])
+
+        return ChoreClaimResult(chore=chore, user=user)

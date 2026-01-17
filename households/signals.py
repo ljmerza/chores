@@ -1,14 +1,15 @@
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from households.models import HouseholdMembership, ReminderSchedule
 
-DEFAULT_SEND_TIME = "18:00"
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 def _default_day_map():
-    return {day: DEFAULT_SEND_TIME for day in DAY_KEYS}
+    default_time = getattr(settings, 'DEFAULT_REMINDER_TIME', '18:00')
+    return {day: default_time for day in DAY_KEYS}
 
 
 @receiver(post_save, sender=HouseholdMembership)

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from chores.models import Chore, ChoreInstance, Notification
 from core.services.notifications import create_notification
-from households.models import Leaderboard, PointTransaction, UserScore
+from households.models import Leaderboard, LeaderboardStatus, PointTransaction, UserScore
 from households.models import ReminderSchedule
 
 logger = get_task_logger(__name__)
@@ -21,8 +21,8 @@ def _get_tz(tz_name: str | None):
     if tz_name:
         try:
             return ZoneInfo(tz_name)
-        except Exception:  # noqa: BLE001
-            logger.warning("Invalid timezone '%s'; falling back to default.", tz_name)
+        except (KeyError, ValueError) as exc:
+            logger.warning("Invalid timezone '%s': %s; falling back to default.", tz_name, exc)
     return timezone.get_current_timezone()
 
 
@@ -67,8 +67,8 @@ def _parse_hhmm(value: str | None) -> time | None:
     try:
         hour, minute = [int(x) for x in value.split(":", 1)]
         return time(hour=hour, minute=minute)
-    except Exception:  # noqa: BLE001
-        logger.warning("Invalid schedule time '%s'; skipping.", value)
+    except (ValueError, TypeError, AttributeError) as exc:
+        logger.warning("Invalid schedule time '%s': %s; skipping.", value, exc)
         return None
 
 
@@ -342,7 +342,7 @@ def _compute_due_dates(chore: Chore, now, horizon):
     max_occurrences = data.get("max_occurrences")
     try:
         max_occurrences = int(max_occurrences) if max_occurrences is not None else None
-    except Exception:  # noqa: BLE001
+    except (ValueError, TypeError):
         max_occurrences = None
     base_dates = _generate_candidate_dates(
         chore=chore,
@@ -387,7 +387,8 @@ def _determine_start_date(chore: Chore, data: dict) -> date | None:
         return timezone.localdate(chore.due_date)
     try:
         return timezone.localdate()
-    except Exception:  # noqa: BLE001
+    except (ValueError, OverflowError) as exc:
+        logger.warning("Failed to get local date: %s", exc)
         return None
 
 
@@ -397,8 +398,8 @@ def _determine_due_time(chore: Chore, data: dict) -> time:
         try:
             hours, minutes = [int(x) for x in due_time.split(":", 1)]
             return time(hour=hours, minute=minutes)
-        except Exception:  # noqa: BLE001
-            logger.warning("Invalid due_time '%s'; falling back to chore.due_date time/default.", due_time)
+        except (ValueError, TypeError, AttributeError) as exc:
+            logger.warning("Invalid due_time '%s': %s; falling back to chore.due_date time/default.", due_time, exc)
     if chore.due_date:
         return timezone.localtime(chore.due_date).timetz()
     return time(hour=17, minute=0)
@@ -411,7 +412,7 @@ def _parse_date(value) -> date | None:
         return value
     try:
         return date.fromisoformat(value)
-    except Exception:  # noqa: BLE001
+    except (ValueError, TypeError):
         return None
 
 
@@ -430,7 +431,7 @@ def _generate_candidate_dates(
     allowed_months = set((recurrence_data.get("filters", {}) or {}).get("allowed_months", []) or [])
     try:
         allowed_months = {int(m) for m in allowed_months}
-    except Exception:  # noqa: BLE001
+    except (ValueError, TypeError):
         allowed_months = set()
     exclude_dates = {
         d for d in (_parse_date(v) for v in (recurrence_data.get("filters", {}) or {}).get("exclude_dates", []) or []) if d
@@ -658,27 +659,43 @@ def _aggregate_leaderboard(period, start_date: date, end_date: date | None):
 def _upsert_leaderboard(period, start_date: date, end_date: date | None, entries_by_household):
     for household_id, entries in entries_by_household.items():
         entries.sort(key=lambda r: (-r["points"], -r["chores_completed"], r["user_id"]))
-        user_ids = []
-        for idx, row in enumerate(entries, start=1):
-            user_ids.append(row["user_id"])
-            Leaderboard.objects.update_or_create(
-                household_id=household_id,
-                user_id=row["user_id"],
-                period=period,
-                period_start_date=start_date,
-                defaults={
-                    "period_end_date": end_date,
-                    "points": row["points"] or 0,
-                    "chores_completed": row["chores_completed"] or 0,
-                    "rank": idx,
-                },
-            )
 
-        Leaderboard.objects.filter(
-            household_id=household_id,
-            period=period,
-            period_start_date=start_date,
-        ).exclude(user_id__in=user_ids).delete()
+        # Wrap all updates for this household in a transaction for consistency
+        with transaction.atomic():
+            # Mark leaderboard as updating to prevent inconsistent reads
+            status, _ = LeaderboardStatus.objects.select_for_update().get_or_create(
+                household_id=household_id
+            )
+            status.is_updating = True
+            status.save(update_fields=['is_updating'])
+
+            try:
+                user_ids = []
+                for idx, row in enumerate(entries, start=1):
+                    user_ids.append(row["user_id"])
+                    Leaderboard.objects.update_or_create(
+                        household_id=household_id,
+                        user_id=row["user_id"],
+                        period=period,
+                        period_start_date=start_date,
+                        defaults={
+                            "period_end_date": end_date,
+                            "points": row["points"] or 0,
+                            "chores_completed": row["chores_completed"] or 0,
+                            "rank": idx,
+                        },
+                    )
+
+                Leaderboard.objects.filter(
+                    household_id=household_id,
+                    period=period,
+                    period_start_date=start_date,
+                ).exclude(user_id__in=user_ids).delete()
+            finally:
+                # Mark update complete
+                status.is_updating = False
+                status.last_updated = timezone.now()
+                status.save(update_fields=['is_updating', 'last_updated'])
 
 
 def _prune_old_data():

@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+
+from core.validators import validate_image_file, validate_image_size, validate_image_dimensions
 from households.models import Household
 
 MAX_CHORE_POINTS = 100_000
@@ -233,7 +235,8 @@ class ChoreInstance(models.Model):
     completion_photo = models.ImageField(
         upload_to='chore_completions/',
         null=True,
-        blank=True
+        blank=True,
+        validators=[validate_image_file, validate_image_size, validate_image_dimensions],
     )
     completion_notes = models.TextField(blank=True)
     points_awarded = models.PositiveIntegerField(null=True, blank=True)

@@ -350,3 +350,61 @@ class StreakBonus(models.Model):
 
     def __str__(self):
         return f"{self.household.name}: {self.streak_days} days - {self.description}"
+
+
+class LeaderboardStatus(models.Model):
+    """
+    Tracks leaderboard update status to prevent inconsistent reads during recomputation.
+    """
+    household = models.OneToOneField(
+        Household,
+        on_delete=models.CASCADE,
+        related_name='leaderboard_status'
+    )
+    is_updating = models.BooleanField(default=False)
+    last_updated = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'leaderboard_status'
+        verbose_name_plural = 'Leaderboard statuses'
+
+    def __str__(self):
+        status = "updating" if self.is_updating else "idle"
+        return f"{self.household.name} leaderboard: {status}"
+
+
+class HomeAssistantConfig(models.Model):
+    """
+    Per-household Home Assistant configuration for notifications.
+    Falls back to global settings when fields are empty.
+    """
+    household = models.OneToOneField(
+        Household,
+        on_delete=models.CASCADE,
+        related_name='ha_config'
+    )
+    base_url = models.URLField(blank=True, default='')
+    token = models.CharField(max_length=512, blank=True, default='')
+    default_target = models.CharField(max_length=255, blank=True, default='')
+    verify_ssl = models.BooleanField(default=True)
+    is_enabled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'homeassistant_configs'
+        verbose_name = 'Home Assistant Config'
+        verbose_name_plural = 'Home Assistant Configs'
+
+    def __str__(self):
+        status = "enabled" if self.is_enabled else "disabled"
+        return f"{self.household.name} HA config ({status})"
+
+    def get_effective_config(self):
+        """Return config with global fallbacks for empty fields."""
+        return {
+            'base_url': self.base_url or getattr(settings, 'HA_BASE_URL', ''),
+            'token': self.token or getattr(settings, 'HA_LONG_LIVED_TOKEN', ''),
+            'default_target': self.default_target or getattr(settings, 'HA_DEFAULT_NOTIFY_TARGET', ''),
+            'verify_ssl': self.verify_ssl if self.base_url else getattr(settings, 'HA_VERIFY_SSL', True),
+        }

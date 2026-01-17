@@ -1,6 +1,6 @@
 try:
     from .celery import app as celery_app
-except Exception:  # noqa: BLE001
+except ImportError:
     celery_app = None
 
 __all__ = ("celery_app",)

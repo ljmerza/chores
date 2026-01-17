@@ -18,6 +18,32 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def get_ha_config(household_id: int) -> Dict[str, Any]:
+    """
+    Get Home Assistant config for a household with global fallbacks.
+
+    Tries to load from HomeAssistantConfig model first, then falls back
+    to global settings.
+    """
+    # Import here to avoid circular imports
+    from households.models import HomeAssistantConfig
+
+    try:
+        config = HomeAssistantConfig.objects.get(household_id=household_id)
+        if config.is_enabled:
+            return config.get_effective_config()
+    except HomeAssistantConfig.DoesNotExist:
+        pass
+
+    # Fall back to global settings
+    return {
+        'base_url': getattr(settings, 'HA_BASE_URL', ''),
+        'token': getattr(settings, 'HA_LONG_LIVED_TOKEN', ''),
+        'default_target': getattr(settings, 'HA_DEFAULT_NOTIFY_TARGET', ''),
+        'verify_ssl': getattr(settings, 'HA_VERIFY_SSL', True),
+    }
+
+
 class ReminderChannel(str, Enum):
     EMAIL = "email"
     SMS = "sms"
@@ -126,10 +152,19 @@ def send_homeassistant_notify(reminder: ReminderTarget) -> None:
     """
     Send a notification through Home Assistant's notify service.
     Requires HA_BASE_URL, HA_LONG_LIVED_TOKEN, and a notify target (per-user or default).
+
+    Configuration priority:
+    1. Per-reminder overrides (reminder.ha_* fields)
+    2. Per-household config (HomeAssistantConfig model)
+    3. Global settings (HA_* environment variables)
     """
-    base_url = (reminder.ha_base_url or getattr(settings, "HA_BASE_URL", "") or "").rstrip("/")
-    token = reminder.ha_token or getattr(settings, "HA_LONG_LIVED_TOKEN", "")
-    default_target = reminder.ha_default_target or getattr(settings, "HA_DEFAULT_NOTIFY_TARGET", "")
+    # Get base config from household or global settings
+    ha_config = get_ha_config(reminder.household_id)
+
+    # Apply per-reminder overrides
+    base_url = (reminder.ha_base_url or ha_config['base_url'] or "").rstrip("/")
+    token = reminder.ha_token or ha_config['token']
+    default_target = reminder.ha_default_target or ha_config['default_target']
 
     target = reminder.homeassistant_target or default_target
     if not (base_url and token and target):
@@ -162,7 +197,7 @@ def send_homeassistant_notify(reminder: ReminderTarget) -> None:
 
     verify_ssl = reminder.ha_verify_ssl
     if verify_ssl is None:
-        verify_ssl = getattr(settings, "HA_VERIFY_SSL", True)
+        verify_ssl = ha_config['verify_ssl']
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=5, verify=verify_ssl)
@@ -174,7 +209,7 @@ def send_homeassistant_notify(reminder: ReminderTarget) -> None:
             reminder.household_id,
             response.status_code,
         )
-    except Exception as exc:  # noqa: BLE001
+    except requests.RequestException as exc:
         logger.warning(
             "Home Assistant notify failed target=%s user_id=%s household_id=%s error=%s",
             target,

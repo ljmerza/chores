@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -343,6 +343,8 @@ class HomeView(TemplateView):
 
         households = Household.objects.filter(
             memberships__user=user
+        ).prefetch_related(
+            Prefetch('memberships', queryset=HouseholdMembership.objects.select_related('user'))
         ).distinct()
 
         selected_household = None
@@ -383,7 +385,7 @@ class HomeView(TemplateView):
             household=selected_household,
             assigned_to=user,
             status__in=['pending', 'in_progress']
-        ).order_by('due_date', 'priority')
+        ).select_related('assigned_to', 'created_by', 'household').order_by('due_date', 'priority')
 
         my_active_chores = list(my_active_chores_qs)
 
@@ -404,7 +406,7 @@ class HomeView(TemplateView):
             household=selected_household,
             assignment_type='global',
             status='pending'
-        )
+        ).select_related('household', 'created_by')
 
         claimable_chores = claimable_qs.order_by('due_date', '-priority')[:5]
 
@@ -429,7 +431,7 @@ class HomeView(TemplateView):
                 is_active=True
             ).filter(
                 Q(allowed_members__isnull=True) | Q(allowed_members=user)
-            ).distinct().order_by('point_cost')
+            ).select_related('household', 'created_by').prefetch_related('allowed_members').distinct().order_by('point_cost')
             if reward.is_available
         ]
 
@@ -442,7 +444,7 @@ class HomeView(TemplateView):
             user=user,
             household=selected_household,
             is_read=False
-        ).order_by('-created_at')[:5]
+        ).select_related('user', 'household').order_by('-created_at')[:5]
 
         context.update({
             'current_membership': membership,
@@ -592,14 +594,27 @@ def logout_view(request):
 
 @login_required
 def claim_chore(request, pk):
-    chore = get_object_or_404(Chore, pk=pk)
-    if not _ensure_membership(request.user, chore.household):
+    if request.method != 'POST':
         return redirect('home')
 
-    if request.method == 'POST' and chore.assignment_type == 'global' and chore.status == 'pending':
+    with transaction.atomic():
+        # Lock the row to prevent race conditions when multiple users claim simultaneously
+        chore = Chore.objects.select_for_update().filter(
+            pk=pk, assignment_type='global', status='pending'
+        ).first()
+
+        if not chore:
+            messages.error(request, "This chore is no longer available for claiming.")
+            return redirect('home')
+
+        if not _ensure_membership(request.user, chore.household):
+            return redirect('home')
+
         chore.assigned_to = request.user
         chore.status = 'in_progress'
         chore.save(update_fields=['assigned_to', 'status'])
+
+        messages.success(request, f"Claimed chore: {chore.title}")
 
     home_url = reverse('home')
     return redirect(f"{home_url}?household={chore.household.id}")
@@ -607,31 +622,59 @@ def claim_chore(request, pk):
 
 @login_required
 def complete_chore(request, pk):
-    chore = get_object_or_404(Chore, pk=pk)
-    if not _ensure_membership(request.user, chore.household):
+    if request.method != 'POST':
         return redirect('home')
 
-    allowed = (
-        chore.assigned_to_id == request.user.id
-        or (chore.assignment_type == 'global' and (chore.assigned_to_id in [None, request.user.id]))
-        or request.user.is_staff
-    )
-    if request.method == 'POST' and allowed and chore.status not in ['completed', 'verified']:
+    from core.services.points import adjust_points
+
+    with transaction.atomic():
+        # Lock the chore row to prevent double-completion race conditions
+        chore = Chore.objects.select_for_update().filter(pk=pk).first()
+
+        if not chore:
+            messages.error(request, "Chore not found.")
+            return redirect('home')
+
+        if not _ensure_membership(request.user, chore.household):
+            return redirect('home')
+
+        # Check status inside the lock to prevent double-completion
+        if chore.status in ['completed', 'verified']:
+            messages.info(request, "This chore has already been completed.")
+            home_url = reverse('home')
+            return redirect(f"{home_url}?household={chore.household.id}")
+
+        allowed = (
+            chore.assigned_to_id == request.user.id
+            or (chore.assignment_type == 'global' and (chore.assigned_to_id in [None, request.user.id]))
+            or request.user.is_staff
+        )
+
+        if not allowed:
+            messages.error(request, "You are not allowed to complete this chore.")
+            home_url = reverse('home')
+            return redirect(f"{home_url}?household={chore.household.id}")
+
         now = timezone.now()
         chore.status = 'completed'
         chore.completed_at = now
         chore.save(update_fields=['status', 'completed_at'])
 
-        score, _ = UserScore.objects.get_or_create(
-            user=request.user,
-            household=chore.household,
-            defaults={'current_points': 0, 'lifetime_points': 0}
-        )
-        score.current_points = (score.current_points or 0) + (chore.base_points or 0)
-        score.lifetime_points = (score.lifetime_points or 0) + (chore.base_points or 0)
-        score.total_chores_completed = (score.total_chores_completed or 0) + 1
-        score.last_chore_completed_at = now
-        score.save(update_fields=['current_points', 'lifetime_points', 'total_chores_completed', 'last_chore_completed_at', 'updated_at'])
+        # Use the thread-safe points service instead of direct manipulation
+        if chore.base_points:
+            adjust_points(
+                user=request.user,
+                household=chore.household,
+                amount=chore.base_points,
+                transaction_type='earned',
+                source_type='chore',
+                source_id=chore.id,
+                description=f"Completed '{chore.title}'",
+                increment_completed=True,
+                completed_at=now,
+            )
+
+        messages.success(request, f"Completed chore: {chore.title}")
 
     home_url = reverse('home')
     return redirect(f"{home_url}?household={chore.household.id}")

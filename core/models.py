@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
+from core.validators import validate_image_file, validate_image_size, validate_image_dimensions
+
 
 class UserManager(BaseUserManager):
     """Custom manager using username for authentication and optional email."""
@@ -62,7 +64,12 @@ class User(AbstractUser):
     ]
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        validators=[validate_image_file, validate_image_size, validate_image_dimensions],
+    )
     homeassistant_target = models.CharField(
         max_length=150,
         null=True,

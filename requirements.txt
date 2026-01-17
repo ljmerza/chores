@@ -19,3 +19,15 @@ mysqlclient>=2.2.0
 celery>=5.3.0
 redis>=5.0.0
 flower>=2.0.0
+
+# For API authentication
+djangorestframework-simplejwt>=5.3.0
+
+# For API documentation
+drf-spectacular>=0.27.0
+
+# For testing
+pytest>=8.0.0
+pytest-django>=4.8.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0

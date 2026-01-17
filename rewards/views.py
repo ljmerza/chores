@@ -360,7 +360,9 @@ class RedeemRewardsView(LoginRequiredMixin, TemplateView):
         search_query = (self.request.GET.get('q') or '').strip()
 
         now = timezone.now()
-        rewards_qs = Reward.objects.filter(household=selected)
+        rewards_qs = Reward.objects.filter(household=selected).select_related(
+            'household', 'created_by'
+        ).prefetch_related('allowed_members')
 
         if status_filter != 'all':
             rewards_qs = rewards_qs.filter(is_active=(status_filter == 'active'))

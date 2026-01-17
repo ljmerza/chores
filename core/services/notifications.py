@@ -54,7 +54,7 @@ def _dispatch_delivery(notification: Notification) -> None:
             ha_verify_ssl=getattr(household, "ha_verify_ssl", None),
         )
         dispatch_reminder(reminder)
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, RuntimeError, AttributeError) as exc:
         logger.warning(
             "Notification delivery failed for notification_id=%s user_id=%s error=%s",
             notification.id,

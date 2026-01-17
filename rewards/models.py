@@ -2,6 +2,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+
+from core.validators import validate_image_file, validate_image_size, validate_image_dimensions
 from households.models import Household
 
 MAX_REWARD_POINT_COST = 100_000
@@ -69,8 +71,18 @@ class Reward(models.Model):
         default=True,
         help_text="If false, redemption auto-approves when constraints pass"
     )
-    icon = models.ImageField(upload_to='reward_icons/', null=True, blank=True)
-    image = models.ImageField(upload_to='reward_images/', null=True, blank=True)
+    icon = models.ImageField(
+        upload_to='reward_icons/',
+        null=True,
+        blank=True,
+        validators=[validate_image_file, validate_image_size, validate_image_dimensions],
+    )
+    image = models.ImageField(
+        upload_to='reward_images/',
+        null=True,
+        blank=True,
+        validators=[validate_image_file, validate_image_size, validate_image_dimensions],
+    )
     is_active = models.BooleanField(default=True)
     available_from = models.DateTimeField(
         null=True,
@@ -177,7 +189,12 @@ class RewardRedemption(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     user_note = models.TextField(blank=True)
     decision_note = models.TextField(blank=True)
-    proof_image = models.ImageField(upload_to='reward_proofs/', null=True, blank=True)
+    proof_image = models.ImageField(
+        upload_to='reward_proofs/',
+        null=True,
+        blank=True,
+        validators=[validate_image_file, validate_image_size, validate_image_dimensions],
+    )
     processed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

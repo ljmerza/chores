@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -11,7 +12,6 @@ from rewards.models import Reward, RewardRedemption
 
 
 DEMO_HOUSEHOLD_NAME = "Demo Household"
-DEFAULT_PASSWORD = "demo1234"
 
 
 class Command(BaseCommand):
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             )
         )
         self.stdout.write(self.style.SUCCESS(f"Household invite code: {household.invite_code}"))
-        self.stdout.write(self.style.SUCCESS(f"User password for all demo accounts: {DEFAULT_PASSWORD}"))
+        self.stdout.write(self.style.SUCCESS(f"User password for all demo accounts: {settings.DEMO_USER_PASSWORD}"))
         self._print_user_credentials(users)
 
     # User and household helpers -------------------------------------------------
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 user = User.objects.create_user(
                     username=definition["username"],
                     email=definition["email"],
-                    password=DEFAULT_PASSWORD,
+                    password=settings.DEMO_USER_PASSWORD,
                     first_name=definition["first_name"],
                     last_name=definition["last_name"],
                     role=definition["role"],
@@ -98,7 +98,7 @@ class Command(BaseCommand):
                 if updates:
                     user.save(update_fields=updates)
                 if not user.has_usable_password():
-                    user.set_password(DEFAULT_PASSWORD)
+                    user.set_password(settings.DEMO_USER_PASSWORD)
                     user.save(update_fields=["password"])
 
             users[definition["key"]] = user

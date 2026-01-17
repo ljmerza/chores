@@ -42,8 +42,10 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'rest_framework',
+    'rest_framework_simplejwt',
     'django_filters',
     'corsheaders',
+    'drf_spectacular',
 
     # Local apps
     'core.apps.CoreConfig',
@@ -158,6 +160,10 @@ CONTACT_EMAIL = config('CONTACT_EMAIL', default='')
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
@@ -166,6 +172,23 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S%z',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# JWT Configuration
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=config('JWT_ACCESS_LIFETIME_MINUTES', default=60, cast=int)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=config('JWT_REFRESH_LIFETIME_DAYS', default=7, cast=int)),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+# API Documentation Configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Chore Manager API',
+    'DESCRIPTION': 'API for household chore management and gamification',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # CORS Configuration
@@ -186,11 +209,19 @@ if EMAIL_BACKEND != 'django.core.mail.backends.console.EmailBackend':
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 # Application-specific settings
-CHORE_VERIFICATION_REQUIRED_BY_DEFAULT = True
-POINTS_MULTIPLIER_EASY = 1
-POINTS_MULTIPLIER_MEDIUM = 2
-POINTS_MULTIPLIER_HARD = 3
-POINTS_MULTIPLIER_EXPERT = 5
+CHORE_VERIFICATION_REQUIRED_BY_DEFAULT = config('CHORE_VERIFICATION_REQUIRED_BY_DEFAULT', default=True, cast=bool)
+POINTS_MULTIPLIER_EASY = config('POINTS_MULTIPLIER_EASY', default=1, cast=int)
+POINTS_MULTIPLIER_MEDIUM = config('POINTS_MULTIPLIER_MEDIUM', default=2, cast=int)
+POINTS_MULTIPLIER_HARD = config('POINTS_MULTIPLIER_HARD', default=3, cast=int)
+POINTS_MULTIPLIER_EXPERT = config('POINTS_MULTIPLIER_EXPERT', default=5, cast=int)
+
+# Demo and default values
+DEMO_USER_PASSWORD = config('DEMO_USER_PASSWORD', default='demo1234')
+DEFAULT_REMINDER_TIME = config('DEFAULT_REMINDER_TIME', default='18:00')
+
+# Upload validation settings
+MAX_UPLOAD_SIZE_MB = config('MAX_UPLOAD_SIZE_MB', default=5, cast=int)
+MAX_IMAGE_DIMENSION = config('MAX_IMAGE_DIMENSION', default=4096, cast=int)
 
 # Celery / background tasks
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
