@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load url_extras %}
 
 {% block title %}{% if edit_mode %}Edit Reward{% else %}Create Reward{% endif %} - Chore Manager{% endblock %}
 
@@ -89,16 +90,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 items-center">
-                    {% url 'manage_rewards' as manage_rewards_url %}
-                    {% if selected_household %}
-                        {% with household_id=selected_household.id|stringformat:"s" %}
-                            {% with back_href=manage_rewards_url|add:"?household="|add:household_id %}
-                                {% include 'components/button.html' with href=back_href label="Back" variant="secondary" %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        {% include 'components/button.html' with href=manage_rewards_url label="Back" variant="secondary" %}
-                    {% endif %}
+                    {% url_with 'manage_rewards' household=selected_household.id as back_href %}
+                    {% include 'components/button.html' with href=back_href label="Back" variant="secondary" %}
                     {% include 'components/button.html' with type="submit" label=edit_mode|yesno:"Update reward,Create reward" %}
                 </div>
             </form>

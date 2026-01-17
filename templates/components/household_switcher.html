@@ -1,3 +1,14 @@
+{% comment %}
+Household Switcher - Dropdown to change active household
+
+Props:
+  - households (required): List of household objects
+  - selected_household: Currently selected household
+  - select_id: ID for select element (default: household)
+  - submit_label: Button text (default: Switch)
+  - extra_hidden: Additional hidden inputs HTML
+  - classes: Additional form classes
+{% endcomment %}
 <form method="get" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 shadow-inner {{ classes }}">
     <label for="{{ select_id|default:'household' }}" class="text-sm text-gray-600">Household</label>
     <select name="household" id="{{ select_id|default:'household' }}" class="bg-transparent text-gray-900 font-semibold focus:outline-none">

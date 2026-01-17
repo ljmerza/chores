@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load url_extras %}
 
 {% block title %}Create Chore{% endblock %}
 
@@ -36,10 +37,10 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {% include 'components/form_field.html' with label="Assignment Type" field=form.assignment_type errors=form.assignment_type.errors required=True for_id=form.assignment_type.id_for_label help_text="Assigned = choose user. Global = anyone can claim." %}
-                    <div id="assignee-wrapper" data-disable-wrapper="assignee">
+                    <div id="assignee-wrapper" data-disable-wrapper="assignee" data-fv-show="id_assignment_type=assigned">
                         {% include 'components/form_field.html' with label="Assignee (for assigned)" field=form.assigned_to errors=form.assigned_to.errors for_id=form.assigned_to.id_for_label %}
                     </div>
-                    <div id="rotation-wrapper" data-disable-wrapper="rotation">
+                    <div id="rotation-wrapper" data-disable-wrapper="rotation" data-fv-show="id_assignment_type=rotating">
                         {% include 'components/form_field.html' with label="Rotation users (for rotating)" field=form.rotation_users errors=form.rotation_users.errors for_id=form.rotation_users.id_for_label help_text="Defaults to everyone; pick who participates in the rotation." %}
                     </div>
                     {% include 'components/form_field.html' with label="Priority" field=form.priority errors=form.priority.errors for_id=form.priority.id_for_label %}
@@ -49,7 +50,9 @@
                     {% include 'components/form_field.html' with label="Points" field=form.base_points errors=form.base_points.errors required=True for_id=form.base_points.id_for_label %}
                     {% include 'components/form_field.html' with label="Difficulty" field=form.difficulty errors=form.difficulty.errors required=True for_id=form.difficulty.id_for_label %}
                     <div>
-                        {% include 'components/form_field.html' with label="Due date (optional)" field=form.due_date errors=form.due_date.errors for_id=form.due_date.id_for_label %}
+                        <div data-disable-wrapper="due-date" data-fv-disable="id_anytime">
+                            {% include 'components/form_field.html' with label="Due date (optional)" field=form.due_date errors=form.due_date.errors for_id=form.due_date.id_for_label %}
+                        </div>
                         <label class="inline-flex items-center space-x-2 mt-2">
                             {{ form.anytime }}
                             <span class="text-sm text-gray-700">Anytime (no due date / no recurrence)</span>
@@ -75,7 +78,7 @@
 
                         <p class="text-xs text-gray-600 mb-2">Recurring timers start after you complete the chore; overdue chores shift forward based on when you finish.</p>
 
-                        <div class="space-y-3" id="recurrence-fields">
+                        <div class="space-y-3" id="recurrence-fields" data-fv-show="id_is_recurring" data-disable-wrapper="recurrence">
                             {% include 'components/form_field.html' with label="Frequency" field=form.frequency errors=form.frequency.errors for_id=form.frequency.id_for_label %}
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
@@ -87,16 +90,16 @@
                                 </div>
                             </div>
 
-                            <div id="monthly-fields" class="space-y-2" data-disable-wrapper="monthly">
+                            <div id="monthly-fields" class="space-y-2" data-disable-wrapper="monthly" data-fv-show="id_frequency=monthly">
                                 <p class="text-sm font-semibold text-gray-800">Monthly options</p>
                                 <p class="text-xs text-gray-600">Select a day/weekday pattern or leave these blank to repeat monthly from the last completion date.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {% include 'components/form_field.html' with label="Mode" label_hint="(day, weekday, or completion-based)" field=form.monthly_mode errors=form.monthly_mode.errors for_id=form.monthly_mode.id_for_label wrapper_classes="text-sm" %}
-                                    <div id="monthly-day-wrapper" data-disable-wrapper="monthly-day">
+                                    <div id="monthly-day-wrapper" data-disable-wrapper="monthly-day" data-fv-show="id_monthly_mode=day">
                                         {% include 'components/form_field.html' with label="Day of month" field=form.day_of_month errors=form.day_of_month.errors for_id=form.day_of_month.id_for_label wrapper_classes="text-sm" %}
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="monthly-weekday-wrapper" data-disable-wrapper="monthly-weekday">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="monthly-weekday-wrapper" data-disable-wrapper="monthly-weekday" data-fv-show="id_monthly_mode=weekday">
                                     {% include 'components/form_field.html' with label="Week of month" field=form.week_of_month errors=form.week_of_month.errors for_id=form.week_of_month.id_for_label wrapper_classes="text-sm" %}
                                     {% include 'components/form_field.html' with label="Weekday" field=form.weekday_of_month errors=form.weekday_of_month.errors for_id=form.weekday_of_month.id_for_label wrapper_classes="text-sm" %}
                                 </div>
@@ -130,16 +133,8 @@
                 </div>
 
                 <div class="flex justify-end gap-3 items-center flex-wrap">
-                    {% url 'home' as home_url %}
-                    {% if selected_household %}
-                        {% with household_id=selected_household.id|stringformat:"s" %}
-                            {% with cancel_href=home_url|add:"?household="|add:household_id %}
-                                {% include 'components/button.html' with href=cancel_href label="Cancel" variant="secondary" size="md" %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        {% include 'components/button.html' with href=home_url label="Cancel" variant="secondary" size="md" %}
-                    {% endif %}
+                    {% url_with 'home' household=selected_household.id as cancel_href %}
+                    {% include 'components/button.html' with href=cancel_href label="Cancel" variant="secondary" size="md" %}
                     {% include 'components/button.html' with type="submit" label=edit_mode|yesno:"Update chore,Create chore" variant="primary" size="lg" %}
                     <div class="flex items-center text-sm text-gray-500">
                         <span class="mr-2">Effort/points preview:</span>
@@ -154,194 +149,68 @@
 
 {% block extra_js %}
 <script>
-    (function () {
-        const isRecurring = document.getElementById("id_is_recurring");
-        const frequency = document.getElementById("id_frequency");
-        const weekly = document.getElementById("weekly-fields");
-        const monthly = document.getElementById("monthly-fields");
-        const months = document.getElementById("id_months_of_year");
-        const daysOfWeek = document.getElementById("id_days_of_week");
-        const dayOfMonth = document.getElementById("id_day_of_month");
-        const weekOfMonth = document.getElementById("id_week_of_month");
-        const weekdayOfMonth = document.getElementById("id_weekday_of_month");
-        const monthlyMode = document.getElementById("id_monthly_mode");
-        const intervalValue = document.getElementById("id_interval_value");
-        const intervalUnitLabel = document.getElementById("interval-unit-label");
-        const assignmentType = document.getElementById("id_assignment_type");
-        const assignee = document.getElementById("id_assigned_to");
-        const assigneeWrapper = document.getElementById("assignee-wrapper");
-        const rotationWrapper = document.getElementById("rotation-wrapper");
-        const rotationUsers = document.getElementById("id_rotation_users");
-        const summaryEl = document.getElementById("recurrence-summary");
-        const pointsInput = document.getElementById("id_base_points");
-        const difficultyInput = document.getElementById("id_difficulty");
-        const pointsPreview = document.getElementById("points-preview");
-        const anytime = document.getElementById("id_anytime");
-        const dueDate = document.getElementById("id_due_date");
-        const recurrenceFields = document.getElementById("recurrence-fields");
+(function() {
+    const $ = id => document.getElementById(id);
+    const anytime = $('id_anytime'), isRecurring = $('id_is_recurring');
+    const frequency = $('id_frequency'), intervalValue = $('id_interval_value');
+    const monthlyMode = $('id_monthly_mode'), dayOfMonth = $('id_day_of_month');
+    const weekOfMonth = $('id_week_of_month'), weekdayOfMonth = $('id_weekday_of_month');
+    const daysOfWeek = $('id_days_of_week'), months = $('id_months_of_year');
+    const summaryEl = $('recurrence-summary'), intervalLabel = $('interval-unit-label');
+    const pointsInput = $('id_base_points'), difficultyInput = $('id_difficulty');
+    const pointsPreview = $('points-preview');
 
-        function setDisabled(el, disabled) {
-            if (!el) return;
-            if (el.tagName === 'SELECT' && el.multiple) {
-                [...el.options].forEach(opt => opt.disabled = disabled);
-            }
-            el.disabled = disabled;
-            const wrapper = el.closest('[data-disable-wrapper]') || el.parentElement;
-            if (!wrapper) return;
-            wrapper.classList.toggle('opacity-50', disabled);
+    // Mutual exclusion: anytime and recurring checkboxes
+    anytime?.addEventListener('change', () => { if (anytime.checked && isRecurring) { isRecurring.checked = false; isRecurring.dispatchEvent(new Event('change')); } updateDynamic(); });
+    isRecurring?.addEventListener('change', () => { if (isRecurring.checked && anytime) { anytime.checked = false; anytime.dispatchEvent(new Event('change')); } updateDynamic(); });
+
+    function updateDynamic() {
+        // Interval unit label
+        if (intervalLabel && frequency) {
+            const unit = {daily: 'days', weekly: 'weeks', monthly: 'months'}[frequency.value] || 'weeks';
+            intervalLabel.textContent = unit;
         }
+        // Summary text
+        if (summaryEl) summaryEl.textContent = buildSummary();
+        // Points preview
+        if (pointsPreview) {
+            const pts = pointsInput?.value || '';
+            const diff = difficultyInput?.selectedOptions?.[0]?.textContent.trim() || 'Medium';
+            pointsPreview.textContent = `${pts || '—'} pts · ${diff}`;
+        }
+    }
 
-        function describeRecurrence() {
-            if (anytime?.checked) return "Anytime chore (no due date / recurrence).";
-            if (!isRecurring?.checked) return "One-time chore (no recurrence).";
-
-            const freq = frequency?.value || 'weekly';
-            const interval = intervalValue?.value || '1';
-            const days = Array.from(daysOfWeek?.selectedOptions || []).map(o => o.textContent.trim());
-            const monthsSelected = Array.from(months?.selectedOptions || []).map(o => o.textContent.trim());
+    function buildSummary() {
+        if (anytime?.checked) return "Anytime chore (no due date / recurrence).";
+        if (!isRecurring?.checked) return "One-time chore (no recurrence).";
+        const freq = frequency?.value || 'weekly';
+        const interval = intervalValue?.value || '1';
+        const unit = freq === 'daily' ? 'day' : freq === 'weekly' ? 'week' : 'month';
+        let parts = [`Every ${interval} ${unit}${parseInt(interval) > 1 ? 's' : ''}`];
+        const days = Array.from(daysOfWeek?.selectedOptions || []).map(o => o.textContent.trim());
+        if (days.length) parts.push(`on ${days.join(', ')}`);
+        if (freq === 'monthly') {
             const mode = monthlyMode?.value || 'day';
-            const hasDayOfMonth = !!dayOfMonth?.value;
-            const hasWeekPattern = !!(weekOfMonth?.value && weekdayOfMonth?.value);
-
-            let parts = [`Every ${interval} ${freq === 'daily' ? 'day' : freq === 'weekly' ? 'week' : 'month'}`];
-            if (parseInt(interval, 10) > 1) {
-                parts[0] += 's';
-            }
-
-            if (days.length) {
-                parts.push(`on ${days.join(', ')}`);
-            }
-
-            if (freq === 'monthly') {
-                if (mode === 'from_completion' || (!hasDayOfMonth && !hasWeekPattern)) {
-                    parts.push('based on the last completion date');
-                } else if (mode === 'day' && hasDayOfMonth) {
-                    parts.push(`on day ${dayOfMonth.value}`);
-                } else if (mode !== 'day' && hasWeekPattern) {
-                    const womText = weekOfMonth.selectedOptions[0]?.textContent.trim();
-                    const womDayText = weekdayOfMonth.selectedOptions[0]?.textContent.trim();
-                    parts.push(`on the ${womText} ${womDayText}`);
-                }
-            }
-
-            if (monthsSelected.length) {
-                parts.push(`active in ${monthsSelected.join(', ')}`);
-            }
-
-            parts.push('Next interval starts after completion (overdue chores shift forward).');
-
-            return parts.join(' ');
-        }
-
-        function updateVisibility(source) {
-            let isAnytimeChecked = anytime?.checked;
-            let isRecurringChecked = isRecurring?.checked;
-
-            if (source === 'anytime' && isAnytimeChecked && isRecurring) {
-                isRecurring.checked = false;
-                isRecurringChecked = false;
-            }
-            if (source === 'recurring' && isRecurringChecked && anytime) {
-                anytime.checked = false;
-                isAnytimeChecked = false;
-            }
-            if (anytime?.checked && isRecurring?.checked) {
-                isRecurring.checked = false;
-                isRecurringChecked = false;
-            }
-
-            const recurringOn = isRecurringChecked && !isAnytimeChecked;
-            const assignVal = assignmentType?.value;
-            const freq = frequency?.value;
-            const mode = monthlyMode?.value || 'day';
-            const useDay = mode === 'day';
-            const useWeekPattern = mode === 'weekday';
-
-            const unitText = freq === 'daily' ? 'days' : freq === 'weekly' ? 'weeks' : 'months';
-            if (intervalUnitLabel) intervalUnitLabel.textContent = unitText;
-
-            if (isAnytimeChecked) {
-                if (dueDate) {
-                    dueDate.value = '';
-                    setDisabled(dueDate, true);
-                }
-            } else {
-                setDisabled(dueDate, false);
-            }
-
-            setDisabled(frequency, !recurringOn);
-
-            if (!recurringOn) {
-                weekly.style.display = 'none';
-                monthly.style.display = 'none';
-                setDisabled(daysOfWeek, true);
-                setDisabled(dayOfMonth, true);
-                setDisabled(weekOfMonth, true);
-                setDisabled(weekdayOfMonth, true);
-                setDisabled(monthlyMode, true);
-                setDisabled(intervalValue, true);
-                setDisabled(months, true);
-                recurrenceFields?.classList.add('opacity-50');
-                recurrenceFields?.classList.add('pointer-events-none');
-            } else {
-                weekly.style.display = '';
-                monthly.style.display = freq === 'monthly' ? '' : 'none';
-
-                setDisabled(intervalValue, false);
-                setDisabled(months, false);
-                setDisabled(monthlyMode, freq !== 'monthly');
-                setDisabled(daysOfWeek, false);
-                recurrenceFields?.classList.remove('opacity-50');
-                recurrenceFields?.classList.remove('pointer-events-none');
-
-                const useCompletion = mode === 'from_completion';
-                setDisabled(dayOfMonth, !(freq === 'monthly' && useDay));
-                setDisabled(weekOfMonth, !(freq === 'monthly' && useWeekPattern));
-                setDisabled(weekdayOfMonth, !(freq === 'monthly' && useWeekPattern));
-
-                const monthDayWrapper = document.getElementById('monthly-day-wrapper');
-                const monthWeekWrapper = document.getElementById('monthly-weekday-wrapper');
-                if (monthDayWrapper) monthDayWrapper.style.display = freq === 'monthly' && useDay ? '' : 'none';
-                if (monthWeekWrapper) monthWeekWrapper.style.display = freq === 'monthly' && useWeekPattern ? '' : 'none';
-                if (monthDayWrapper && useCompletion) monthDayWrapper.style.display = 'none';
-                if (monthWeekWrapper && useCompletion) monthWeekWrapper.style.display = 'none';
-            }
-
-            const assigned = assignVal === 'assigned';
-            assigneeWrapper.style.opacity = assigned ? '1' : '0.5';
-            setDisabled(assignee, !assigned);
-
-            const rotating = assignVal === 'rotating';
-            rotationWrapper?.classList.toggle('opacity-50', !rotating);
-            setDisabled(rotationUsers, !rotating);
-
-            if (summaryEl) {
-                summaryEl.textContent = describeRecurrence();
-            }
-
-            if (pointsPreview) {
-                const pts = pointsInput?.value || '';
-                const diff = difficultyInput?.selectedOptions?.[0]?.textContent.trim() || difficultyInput?.value || 'Medium';
-                pointsPreview.textContent = `${pts || '—'} pts · ${diff}`;
+            if (mode === 'from_completion' || (!dayOfMonth?.value && !(weekOfMonth?.value && weekdayOfMonth?.value))) {
+                parts.push('based on the last completion date');
+            } else if (mode === 'day' && dayOfMonth?.value) {
+                parts.push(`on day ${dayOfMonth.value}`);
+            } else if (mode === 'weekday' && weekOfMonth?.value && weekdayOfMonth?.value) {
+                parts.push(`on the ${weekOfMonth.selectedOptions[0]?.textContent.trim()} ${weekdayOfMonth.selectedOptions[0]?.textContent.trim()}`);
             }
         }
+        const monthsSelected = Array.from(months?.selectedOptions || []).map(o => o.textContent.trim());
+        if (monthsSelected.length) parts.push(`active in ${monthsSelected.join(', ')}`);
+        parts.push('Next interval starts after completion.');
+        return parts.join(' ');
+    }
 
-        isRecurring?.addEventListener('change', () => updateVisibility('recurring'));
-        frequency?.addEventListener('change', updateVisibility);
-        monthlyMode?.addEventListener('change', updateVisibility);
-        assignmentType?.addEventListener('change', updateVisibility);
-        pointsInput?.addEventListener('input', updateVisibility);
-        difficultyInput?.addEventListener('change', updateVisibility);
-        rotationUsers?.addEventListener('change', updateVisibility);
-        anytime?.addEventListener('change', () => updateVisibility('anytime'));
-        months?.addEventListener('change', updateVisibility);
-        daysOfWeek?.addEventListener('change', updateVisibility);
-        dayOfMonth?.addEventListener('input', updateVisibility);
-        weekOfMonth?.addEventListener('change', updateVisibility);
-        weekdayOfMonth?.addEventListener('change', updateVisibility);
-        intervalValue?.addEventListener('input', updateVisibility);
-        document.addEventListener('DOMContentLoaded', updateVisibility);
-        updateVisibility();
-    })();
+    // Listen for changes on fields that affect dynamic content
+    [frequency, intervalValue, monthlyMode, dayOfMonth, weekOfMonth, weekdayOfMonth, daysOfWeek, months, pointsInput, difficultyInput]
+        .forEach(el => el?.addEventListener('change', updateDynamic));
+    [intervalValue, dayOfMonth, pointsInput].forEach(el => el?.addEventListener('input', updateDynamic));
+
+    updateDynamic();
+})();
 </script>
 {% endblock %}

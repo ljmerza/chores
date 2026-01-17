@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load url_extras %}
 
 {% block title %}Manage Chores{% endblock %}
 
@@ -15,17 +16,13 @@
         </div>
         {% endif %}
 
-        {% url 'create_chore' as create_chore_url %}
+        {% url_with 'create_chore' household=selected_household.id as create_chore_href %}
         {% if selected_household %}
-            {% with header_title="Manage "|add:selected_household.name %}
-                {% with household_id=selected_household.id|stringformat:"s" %}
-                    {% with button_href=create_chore_url|add:"?household="|add:household_id button_label="Create chore" %}
-                        {% include 'components/page_header.html' with eyebrow="Chores" title=header_title subtitle="Review every chore in this household, filter quickly, and jump into edits." actions_template='components/actions/header_switcher_with_button.html' %}
-                    {% endwith %}
-                {% endwith %}
+            {% with header_title="Manage "|add:selected_household.name button_href=create_chore_href button_label="Create chore" %}
+                {% include 'components/page_header.html' with eyebrow="Chores" title=header_title subtitle="Review every chore in this household, filter quickly, and jump into edits." actions_template='components/actions/header_switcher_with_button.html' %}
             {% endwith %}
         {% else %}
-            {% with header_title="Manage chores" button_href=create_chore_url button_label="Create chore" %}
+            {% with header_title="Manage chores" button_href=create_chore_href button_label="Create chore" %}
                 {% include 'components/page_header.html' with eyebrow="Chores" title=header_title subtitle="Review every chore in this household, filter quickly, and jump into edits." actions_template='components/actions/header_switcher_with_button.html' %}
             {% endwith %}
         {% endif %}
@@ -72,15 +69,8 @@
                     </div>
                     <div class="flex gap-2">
                         {% include 'components/button.html' with type="submit" label="Filter" size="sm" %}
-                        {% if selected_household %}
-                            {% with household_id=selected_household.id|stringformat:"s" %}
-                                {% with reset_href=manage_url|add:"?household="|add:household_id %}
-                                    {% include 'components/button.html' with href=reset_href label="Reset" variant="secondary" size="sm" %}
-                                {% endwith %}
-                            {% endwith %}
-                        {% else %}
-                            {% include 'components/button.html' with href=manage_url label="Reset" variant="secondary" size="sm" %}
-                        {% endif %}
+                        {% url_with 'manage_chores' household=selected_household.id as reset_href %}
+                        {% include 'components/button.html' with href=reset_href label="Reset" variant="secondary" size="sm" %}
                     </div>
                 </form>
             </div>
@@ -154,16 +144,8 @@
                                 <p class="text-xs text-gray-500">Priority: {{ chore.get_priority_display }}</p>
                             </td>
                             <td class="px-4 py-4 text-right text-sm">
-                                {% url 'edit_chore' chore.id as edit_url %}
-                                {% if selected_household %}
-                                    {% with household_id=selected_household.id|stringformat:"s" %}
-                                        {% with edit_href=edit_url|add:"?household="|add:household_id %}
-                                            {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% else %}
-                                    {% include 'components/button.html' with href=edit_url label="Edit" variant="secondary" size="sm" %}
-                                {% endif %}
+                                {% url_with 'edit_chore' chore.id household=selected_household.id as edit_href %}
+                                {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
                             </td>
                         </tr>
                         {% empty %}

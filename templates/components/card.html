@@ -1,3 +1,14 @@
+{% comment %}
+Card - Container with optional header
+
+Props:
+  - body (required): Card body content (or use content)
+  - title: Header title text
+  - subtitle: Header subtitle text
+  - header_right: Content for right side of header
+  - body_class: Override body div classes (default: p-5 space-y-3)
+  - classes: Additional wrapper classes
+{% endcomment %}
 <div class="bg-white rounded-xl shadow border border-gray-100 {{ classes }}">
     {% if title or subtitle or header_right %}
         <div class="flex items-center justify-between p-5 border-b border-gray-100">

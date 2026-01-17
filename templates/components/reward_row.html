@@ -1,3 +1,13 @@
+{% comment %}
+Reward Row - Table row for reward display
+
+Props:
+  - reward (required): Reward object
+  - mode: 'redeem' for user view, else shows edit button
+  - selected_household: Current household for URL building
+  - user_score: User's score object (for redeem mode)
+{% endcomment %}
+{% load url_extras %}
 <tr class="hover:bg-gray-50">
     <td class="px-4 py-4 align-top">
         <div class="flex flex-col gap-1">
@@ -55,47 +65,20 @@
     </td>
     <td class="px-4 py-4 text-right text-sm">
         {% if mode == 'redeem' %}
-            {% url 'redeem_reward' reward.id as base_redeem_url %}
-            {% if selected_household %}
-                {% with household_id=selected_household.id|stringformat:"s" %}
-                    {% with redeem_href=base_redeem_url|add:"?household="|add:household_id %}
-                        {% if reward.is_available and user_score and user_score.current_points|default:0 >= reward.point_cost %}
-                            <form method="post" action="{{ redeem_href }}">
-                                {% csrf_token %}
-                                {% include 'components/button.html' with type="submit" label="Redeem" size="sm" %}
-                            </form>
-                        {% elif reward.is_available %}
-                            <div class="text-xs text-gray-500 text-right">Need {{ reward.point_cost }} pts</div>
-                        {% else %}
-                            <div class="text-xs text-gray-500 text-right">Unavailable</div>
-                        {% endif %}
-                    {% endwith %}
-                {% endwith %}
+            {% url_with 'redeem_reward' reward.id household=selected_household.id as redeem_href %}
+            {% if reward.is_available and user_score and user_score.current_points|default:0 >= reward.point_cost %}
+                <form method="post" action="{{ redeem_href }}">
+                    {% csrf_token %}
+                    {% include 'components/button.html' with type="submit" label="Redeem" size="sm" %}
+                </form>
+            {% elif reward.is_available %}
+                <div class="text-xs text-gray-500 text-right">Need {{ reward.point_cost }} pts</div>
             {% else %}
-                {% with redeem_href=base_redeem_url %}
-                    {% if reward.is_available and user_score and user_score.current_points|default:0 >= reward.point_cost %}
-                        <form method="post" action="{{ redeem_href }}">
-                            {% csrf_token %}
-                            {% include 'components/button.html' with type="submit" label="Redeem" size="sm" %}
-                        </form>
-                    {% elif reward.is_available %}
-                        <div class="text-xs text-gray-500 text-right">Need {{ reward.point_cost }} pts</div>
-                    {% else %}
-                        <div class="text-xs text-gray-500 text-right">Unavailable</div>
-                    {% endif %}
-                {% endwith %}
+                <div class="text-xs text-gray-500 text-right">Unavailable</div>
             {% endif %}
         {% else %}
-            {% url 'edit_reward' reward.id as base_edit_url %}
-            {% if selected_household %}
-                {% with household_id=selected_household.id|stringformat:"s" %}
-                    {% with edit_href=base_edit_url|add:"?household="|add:household_id %}
-                        {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
-                    {% endwith %}
-                {% endwith %}
-            {% else %}
-                {% include 'components/button.html' with href=base_edit_url label="Edit" variant="secondary" size="sm" %}
-            {% endif %}
+            {% url_with 'edit_reward' reward.id household=selected_household.id as edit_href %}
+            {% include 'components/button.html' with href=edit_href label="Edit" variant="secondary" size="sm" %}
         {% endif %}
     </td>
 </tr>

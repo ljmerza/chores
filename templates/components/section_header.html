@@ -1,3 +1,14 @@
+{% comment %}
+Section Header - Header with optional action button
+
+Props:
+  - title (required): Heading text
+  - subtitle: Subheading text
+  - action_label: Button text
+  - action_href: Button URL
+  - action_variant: Button variant (default: ghost)
+  - action_content: Custom action HTML (safe)
+{% endcomment %}
 <div class="flex items-center justify-between border-b border-gray-100 pb-3">
     <div>
         <h2 class="text-xl font-bold text-gray-900">{{ title }}</h2>

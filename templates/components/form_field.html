@@ -1,3 +1,17 @@
+{% comment %}
+Form Field - Wrapper for form inputs with label/errors
+
+Props:
+  - field (required): Django form field widget
+  - label: Field label text
+  - for_id: ID for label's for attribute
+  - required: Show required indicator if true
+  - required_text: Custom required text (default: required)
+  - label_hint: Additional hint text after label
+  - help_text: Help text below field
+  - errors: Field errors to display
+  - wrapper_classes: Additional wrapper classes
+{% endcomment %}
 <div class="space-y-1 {{ wrapper_classes }}">
     {% if label %}
         <label{% if for_id %} for="{{ for_id }}"{% endif %} class="block text-sm font-semibold text-gray-800">

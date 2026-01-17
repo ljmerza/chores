@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,19 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Chore Manager{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#7FB77E',
-                        secondary: '#4F7D4A',
-                        danger: '#B77E7F',
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="{% static 'js/tailwind-config.js' %}"></script>
     <style>
         body {
             background: #111827;
@@ -34,6 +23,7 @@
         {% block content %}{% endblock %}
     </div>
 
+    <script src="{% static 'js/form-visibility.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

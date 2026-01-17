@@ -1,3 +1,9 @@
+{% comment %}
+Messages - Renders Django messages as alerts
+
+Context required:
+  - messages: Django messages framework messages
+{% endcomment %}
 {% if messages %}
     <div class="space-y-2">
         {% for message in messages %}
