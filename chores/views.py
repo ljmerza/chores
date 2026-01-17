@@ -6,8 +6,9 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
 from core.forms import HomeAssistantSettingsForm, HomeAssistantTargetForm
-from .models import Chore, ChoreRotation, Notification
-from .forms import CreateChoreForm
+from .models import Chore, ChoreRotation, ChoreTemplate, Notification
+from .forms import AddFromTemplateForm, CreateChoreForm
+from .services import create_chores_from_templates
 
 
 class CreateChoreView(LoginRequiredMixin, TemplateView):
@@ -398,3 +399,108 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
         if post or self.request.method == "POST":
             return HomeAssistantSettingsForm(self.request.POST, instance=self.selected_household)
         return HomeAssistantSettingsForm(instance=self.selected_household)
+
+
+class TemplateCatalogView(LoginRequiredMixin, TemplateView):
+    """Post-onboarding browsable catalog for adding chore templates."""
+    template_name = 'chores/template_catalog.html'
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.households = self._household_queryset()
+
+        if not self.households.exists():
+            messages.error(request, "Join or create a household to browse templates.")
+            return redirect('home')
+
+        self.selected_household = self._selected_household()
+        if not self.selected_household:
+            messages.error(request, "Select a household to add templates.")
+            return redirect('home')
+
+        if not self._is_admin(request.user, self.selected_household):
+            messages.error(request, "You need to be an admin to add chore templates.")
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def _household_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Household.objects.all()
+        return Household.objects.filter(
+            memberships__user=user,
+            memberships__role='admin'
+        ).distinct()
+
+    def _selected_household(self):
+        requested = self.request.GET.get('household')
+        if requested:
+            return self.households.filter(id=requested).first()
+        return self.households.first()
+
+    def _is_admin(self, user, household):
+        return (
+            HouseholdMembership.objects.filter(
+                household=household,
+                user=user,
+                role='admin'
+            ).exists()
+            or user.is_staff
+            or user.role == 'admin'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get system templates
+        templates = ChoreTemplate.objects.filter(
+            household__isnull=True, is_public=True
+        ).order_by('category', 'title')
+
+        # Group by category
+        categories = {}
+        for template in templates:
+            cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(template.category, template.category)
+            if cat_name not in categories:
+                categories[cat_name] = []
+            categories[cat_name].append(template)
+
+        # Category filter
+        category_filter = self.request.GET.get('category', '')
+        if category_filter:
+            templates = templates.filter(category=category_filter)
+            categories = {k: v for k, v in categories.items() if v and v[0].category == category_filter}
+
+        context.update({
+            'households': self.households,
+            'selected_household': self.selected_household,
+            'categories': categories,
+            'category_choices': ChoreTemplate.CATEGORY_CHOICES,
+            'category_filter': category_filter,
+            'template_count': templates.count(),
+        })
+        return context
+
+    def post(self, request):
+        template_ids = request.POST.getlist('templates')
+        if not template_ids:
+            messages.warning(request, "No templates selected.")
+            return redirect(f"{reverse('template_catalog')}?household={self.selected_household.id}")
+
+        templates = ChoreTemplate.objects.filter(
+            id__in=template_ids,
+            household__isnull=True,
+            is_public=True
+        )
+
+        if templates.exists():
+            chores = create_chores_from_templates(
+                templates=list(templates),
+                household=self.selected_household,
+                created_by=request.user,
+                assignment_type='global'
+            )
+            messages.success(request, f"Added {len(chores)} chores to {self.selected_household.name}.")
+
+        return redirect(f"{reverse('manage_chores')}?household={self.selected_household.id}")
