@@ -11,9 +11,10 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from .models import User
+from .mixins import HouseholdAdminViewMixin
 from households.models import Household, HouseholdMembership, UserScore
 from chores.models import Chore, ChoreTemplate, Notification
-from chores.services import create_chores_from_templates
+from core.services.chores import create_chores_from_templates, get_system_templates_grouped_by_category
 from rewards.models import Reward
 from rewards.services import request_redemption, RewardError
 from .forms import (
@@ -30,63 +31,13 @@ from .forms import (
 INVITE_SESSION_KEY = 'invite_signup_household_id'
 
 
-class AdminHubView(LoginRequiredMixin, TemplateView):
+class AdminHubView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
     """
     Admin-only shortcuts hub for managing the selected household.
     """
     template_name = 'core/admin_hub.html'
     login_url = reverse_lazy('login')
-
-    def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-        if not self.households.exists():
-            messages.error(request, "Join or create a household to manage it.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to manage.")
-            return redirect('home')
-
-        if not self._is_admin(request.user, self.selected_household):
-            messages.error(request, "You need to be an admin to access management tools.")
-            return redirect('home')
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(
-            memberships__user=user,
-            memberships__role='admin'
-        ).distinct()
-
-    def _selected_household(self):
-        requested = self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_admin(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(
-                household=household,
-                user=user,
-                role='admin'
-            ).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'households': self.households,
-            'selected_household': self.selected_household,
-        })
-        return context
+    no_household_message = "Join or create a household to manage it."
 
 
 class SetupWizardView(TemplateView):
@@ -258,21 +209,10 @@ class SetupWizardTemplatesView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        categories = get_system_templates_grouped_by_category()
         context['household'] = self.household
-        context['form'] = TemplateSelectionForm()
-
-        # Group templates by category
-        templates = ChoreTemplate.objects.filter(
-            household__isnull=True, is_public=True
-        ).order_by('category', 'title')
-        categories = {}
-        for template in templates:
-            cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(template.category, template.category)
-            if cat_name not in categories:
-                categories[cat_name] = []
-            categories[cat_name].append(template)
+        context['form'] = TemplateSelectionForm(categories=categories)
         context['categories'] = categories
-
         return context
 
     def post(self, request):
@@ -282,7 +222,8 @@ class SetupWizardTemplatesView(LoginRequiredMixin, TemplateView):
             request.session.pop('setup_household_id', None)
             return redirect('home')
 
-        form = TemplateSelectionForm(request.POST)
+        categories = get_system_templates_grouped_by_category()
+        form = TemplateSelectionForm(request.POST, categories=categories)
         if form.is_valid():
             selected_templates = form.get_selected_templates()
             if selected_templates:
@@ -296,20 +237,14 @@ class SetupWizardTemplatesView(LoginRequiredMixin, TemplateView):
                     request,
                     f"Added {len(selected_templates)} chores to your household."
                 )
+            else:
+                messages.info(
+                    request,
+                    "No chores added. You can add chores later from the template catalog."
+                )
 
             request.session.pop('setup_household_id', None)
             return redirect('home')
-
-        # If form invalid, re-render with errors
-        templates = ChoreTemplate.objects.filter(
-            household__isnull=True, is_public=True
-        ).order_by('category', 'title')
-        categories = {}
-        for template in templates:
-            cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(template.category, template.category)
-            if cat_name not in categories:
-                categories[cat_name] = []
-            categories[cat_name].append(template)
 
         return render(request, self.template_name, {
             'form': form,

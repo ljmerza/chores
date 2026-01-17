@@ -358,15 +358,29 @@ class TemplateSelectionForm(forms.Form):
         widget=forms.CheckboxSelectMultiple()
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, categories=None, **kwargs):
+        """
+        Initialize the form with template choices.
+
+        Args:
+            categories: Optional pre-fetched dict of category -> templates.
+                       If not provided, will fetch from service.
+        """
         super().__init__(*args, **kwargs)
-        templates = ChoreTemplate.objects.filter(
-            household__isnull=True, is_public=True
-        ).order_by('category', 'title')
-        self.fields['templates'].choices = [
-            (str(t.id), t.title) for t in templates
-        ]
-        self.template_objects = {str(t.id): t for t in templates}
+
+        if categories is None:
+            from core.services.chores import get_system_templates_grouped_by_category
+            categories = get_system_templates_grouped_by_category()
+
+        # Flatten categories to build choices and lookup dict
+        self.template_objects = {}
+        choices = []
+        for cat_templates in categories.values():
+            for t in cat_templates:
+                choices.append((str(t.id), t.title))
+                self.template_objects[str(t.id)] = t
+
+        self.fields['templates'].choices = choices
 
     def get_selected_templates(self) -> List[ChoreTemplate]:
         """Return the selected ChoreTemplate instances."""

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, List, Optional
 
 from django.db import transaction
 from django.utils import timezone
@@ -7,7 +7,8 @@ from django.utils import timezone
 from core.models import User
 from core.services.notifications import create_notification
 from core.services.points import PointChangeResult, adjust_points
-from chores.models import Chore, ChoreInstance
+from chores.models import Chore, ChoreInstance, ChoreTemplate
+from households.models import Household
 
 
 class ChoreStateError(Exception):
@@ -129,3 +130,76 @@ def claim_global_chore(
         chore.save(update_fields=['assigned_to', 'status'])
 
         return ChoreClaimResult(chore=chore, user=user)
+
+
+def get_system_templates_grouped_by_category() -> Dict[str, List[ChoreTemplate]]:
+    """
+    Fetch system-wide templates and group by category display name.
+
+    Returns:
+        Dict mapping category display names to lists of ChoreTemplate objects.
+    """
+    templates = ChoreTemplate.objects.filter(
+        household__isnull=True, is_public=True
+    ).order_by('category', 'title')
+
+    categories: Dict[str, List[ChoreTemplate]] = {}
+    for template in templates:
+        cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(
+            template.category, template.category
+        )
+        if cat_name not in categories:
+            categories[cat_name] = []
+        categories[cat_name].append(template)
+
+    return categories
+
+
+def create_chores_from_templates(
+    templates: List[ChoreTemplate],
+    household: Household,
+    created_by: User,
+    assignment_type: str = 'global'
+) -> List[Chore]:
+    """
+    Create Chore objects from a list of ChoreTemplate objects.
+
+    Uses bulk_create for efficiency when creating many chores.
+
+    Args:
+        templates: List of ChoreTemplate instances to convert
+        household: Household the chores belong to
+        created_by: User creating the chores
+        assignment_type: One of 'assigned', 'global', 'rotating' (default: 'global')
+
+    Returns:
+        List of created Chore objects
+    """
+    if not templates:
+        return []
+
+    chore_objects = [
+        Chore(
+            household=household,
+            title=template.title,
+            description=template.description,
+            category=template.category,
+            difficulty=template.difficulty,
+            base_points=template.suggested_points,
+            status='pending',
+            assignment_type=assignment_type,
+            assigned_to=None,
+            created_by=created_by,
+            due_date=None,
+            recurrence_pattern='none',
+            requires_verification=False,
+            estimated_minutes=template.estimated_minutes,
+            priority='medium',
+        )
+        for template in templates
+    ]
+
+    with transaction.atomic():
+        created_chores = Chore.objects.bulk_create(chore_objects)
+
+    return created_chores

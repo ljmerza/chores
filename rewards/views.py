@@ -6,6 +6,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership, UserScore
+from core.mixins import HouseholdAdminViewMixin, HouseholdMemberViewMixin
 from .forms import RewardForm
 from .models import Reward
 
@@ -192,49 +193,11 @@ class EditRewardView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
-class ManageRewardsView(LoginRequiredMixin, TemplateView):
+class ManageRewardsView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
     template_name = 'rewards/manage.html'
     login_url = reverse_lazy('login')
-
-    def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-        if not self.households.exists():
-            messages.error(request, "Join or create a household to manage rewards.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to manage rewards.")
-            return redirect('home')
-
-        if not self._is_admin(request.user, self.selected_household):
-            messages.error(request, "You need to be an admin to manage rewards.")
-            return redirect('home')
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(memberships__user=user).distinct()
-
-    def _selected_household(self):
-        requested = self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_admin(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(
-                household=household,
-                user=user,
-                role='admin'
-            ).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
+    no_household_message = "Join or create a household to manage rewards."
+    no_permission_message = "You need to be an admin to manage rewards."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -311,45 +274,11 @@ class ManageRewardsView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class RedeemRewardsView(LoginRequiredMixin, TemplateView):
+class RedeemRewardsView(HouseholdMemberViewMixin, LoginRequiredMixin, TemplateView):
     template_name = 'rewards/redeem.html'
     login_url = reverse_lazy('login')
-
-    def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-        if not self.households.exists():
-            messages.error(request, "Join or create a household to view rewards.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to view rewards.")
-            return redirect('home')
-
-        if not self._is_member(request.user, self.selected_household):
-            messages.error(request, "You need to be part of this household to redeem rewards.")
-            return redirect('home')
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(memberships__user=user).distinct()
-
-    def _selected_household(self):
-        requested = self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_member(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(household=household, user=user).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
+    no_household_message = "Join or create a household to view rewards."
+    no_permission_message = "You need to be part of this household to redeem rewards."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

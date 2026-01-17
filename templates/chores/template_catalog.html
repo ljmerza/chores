@@ -35,7 +35,7 @@
                     </select>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-500" id="selectedCount">0 selected</span>
+                    <span class="text-sm text-gray-500" id="selectedCount" aria-live="polite">0 selected</span>
                     <button type="button" id="selectAllBtn" class="text-sm text-primary hover:underline">Select All</button>
                 </div>
             </div>
@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const categoryCheckboxes = document.querySelectorAll('.template-item[data-category="' + category + '"] .template-checkbox');
             const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
             categoryCheckboxes.forEach(cb => cb.checked = !allChecked);
+            this.textContent = allChecked ? 'Select all' : 'Deselect all';
             updateCount();
         });
     });
