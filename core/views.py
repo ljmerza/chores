@@ -12,7 +12,8 @@ from django.urls import reverse, reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from .models import User
 from households.models import Household, HouseholdMembership, UserScore
-from chores.models import Chore, Notification
+from chores.models import Chore, ChoreTemplate, Notification
+from chores.services import create_chores_from_templates
 from rewards.models import Reward
 from rewards.services import request_redemption, RewardError
 from .forms import (
@@ -22,6 +23,7 @@ from .forms import (
     InviteCodeForm,
     LoginForm,
     SetupWizardForm,
+    TemplateSelectionForm,
 )
 
 
@@ -153,16 +155,13 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
             request.session.pop('setup_household_id', None)
             return redirect('home')
 
-        if request.GET.get('skip') == '1':
-            request.session.pop('setup_household_id', None)
-            return redirect('home')
-
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['household'] = self.household
         context['formset'] = AdditionalAccountFormSet()
+        context['skip_url'] = reverse('setup_wizard_templates')
         return context
 
     def post(self, request):
@@ -229,12 +228,93 @@ class SetupWizardMembersView(LoginRequiredMixin, TemplateView):
                         household=household
                     )
 
-            request.session.pop('setup_household_id', None)
-            return redirect('home')
+            return redirect('setup_wizard_templates')
 
         return render(request, self.template_name, {
             'formset': formset,
             'household': household
+        })
+
+
+class SetupWizardTemplatesView(LoginRequiredMixin, TemplateView):
+    template_name = 'core/setup_wizard_templates.html'
+    login_url = reverse_lazy('login')
+
+    def dispatch(self, request, *args, **kwargs):
+        self.household_id = request.session.get('setup_household_id')
+        if not self.household_id:
+            return redirect('home')
+
+        self.household = Household.objects.filter(id=self.household_id).first()
+        if not self.household:
+            request.session.pop('setup_household_id', None)
+            return redirect('home')
+
+        if request.GET.get('skip') == '1':
+            request.session.pop('setup_household_id', None)
+            return redirect('home')
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['household'] = self.household
+        context['form'] = TemplateSelectionForm()
+
+        # Group templates by category
+        templates = ChoreTemplate.objects.filter(
+            household__isnull=True, is_public=True
+        ).order_by('category', 'title')
+        categories = {}
+        for template in templates:
+            cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(template.category, template.category)
+            if cat_name not in categories:
+                categories[cat_name] = []
+            categories[cat_name].append(template)
+        context['categories'] = categories
+
+        return context
+
+    def post(self, request):
+        household_id = request.session.get('setup_household_id')
+        household = Household.objects.filter(id=household_id).first()
+        if not household:
+            request.session.pop('setup_household_id', None)
+            return redirect('home')
+
+        form = TemplateSelectionForm(request.POST)
+        if form.is_valid():
+            selected_templates = form.get_selected_templates()
+            if selected_templates:
+                create_chores_from_templates(
+                    templates=selected_templates,
+                    household=household,
+                    created_by=request.user,
+                    assignment_type='global'
+                )
+                messages.success(
+                    request,
+                    f"Added {len(selected_templates)} chores to your household."
+                )
+
+            request.session.pop('setup_household_id', None)
+            return redirect('home')
+
+        # If form invalid, re-render with errors
+        templates = ChoreTemplate.objects.filter(
+            household__isnull=True, is_public=True
+        ).order_by('category', 'title')
+        categories = {}
+        for template in templates:
+            cat_name = dict(ChoreTemplate.CATEGORY_CHOICES).get(template.category, template.category)
+            if cat_name not in categories:
+                categories[cat_name] = []
+            categories[cat_name].append(template)
+
+        return render(request, self.template_name, {
+            'form': form,
+            'household': household,
+            'categories': categories,
         })
 
 
@@ -293,8 +373,8 @@ class HouseholdSignupView(TemplateView):
                 )
 
                 login(request, user)
-                messages.success(request, "Household created! You're the admin for this household.")
-                return redirect('home')
+                request.session['setup_household_id'] = household.id
+                return redirect('setup_wizard_templates')
 
         return render(request, self.template_name, {'form': form})
 

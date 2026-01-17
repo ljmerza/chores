@@ -2,7 +2,7 @@ from django import forms
 from django.utils import timezone
 from core.models import User
 from households.models import Household, HouseholdMembership
-from .models import Chore
+from .models import Chore, ChoreTemplate
 
 TAILWIND_INPUT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200'
 TAILWIND_SELECT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 bg-white'
@@ -292,3 +292,31 @@ class CreateChoreForm(forms.Form):
 
         cleaned['recurrence_data'] = recurrence_data
         return cleaned
+
+
+class AddFromTemplateForm(forms.Form):
+    """Form for adding a chore from a template with optional overrides."""
+    template_id = forms.IntegerField(widget=forms.HiddenInput())
+    title = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Override title (optional)'})
+    )
+    base_points = forms.IntegerField(
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'Override points (optional)'})
+    )
+    assignment_type = forms.ChoiceField(
+        choices=Chore.ASSIGNMENT_TYPE_CHOICES,
+        initial='global',
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT_CLASS})
+    )
+
+    def clean_template_id(self):
+        template_id = self.cleaned_data.get('template_id')
+        try:
+            self.template = ChoreTemplate.objects.get(pk=template_id)
+        except ChoreTemplate.DoesNotExist:
+            raise forms.ValidationError("Invalid template.")
+        return template_id
