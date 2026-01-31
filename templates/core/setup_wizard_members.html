@@ -9,12 +9,12 @@
             <div class="p-8 md:p-12">
                 <div class="flex items-start justify-between flex-col md:flex-row md:items-center mb-8">
                     <div>
-                        <p class="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Step 2 of 2</p>
+                        <p class="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Step 2 of 3</p>
                         <h1 class="text-4xl font-bold text-gray-800 leading-tight">Add Household Accounts</h1>
                         <p class="text-gray-600 mt-2">Your owner account is ready. Add other owners or child accounts so everyone can log in.</p>
                     </div>
-                    <a href="?skip=1" class="mt-4 md:mt-0 inline-flex items-center text-primary font-semibold hover:underline">
-                        Skip for now
+                    <a href="{% url 'setup_wizard_templates' %}" class="mt-4 md:mt-0 inline-flex items-center text-primary font-semibold hover:underline">
+                        Skip to chores
                     </a>
                 </div>
 
@@ -75,8 +75,8 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                        {% include 'components/button.html' with href="?skip=1" label="Skip & Finish" variant="secondary" size="md" block=True %}
-                        {% include 'components/button.html' with type="submit" label="Save Accounts & Finish Setup" variant="primary" size="lg" block=True %}
+                        {% include 'components/button.html' with href=skip_url label="Skip to Chores" variant="secondary" size="md" block=True %}
+                        {% include 'components/button.html' with type="submit" label="Save Accounts & Continue" variant="primary" size="lg" block=True %}
                     </div>
                 </form>
             </div>

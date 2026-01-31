@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Chore Templates{% endblock %}
+
+{% block navbar %}
+    {% include 'components/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="py-10">
+    <div class="max-w-5xl mx-auto space-y-8">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-sm uppercase text-primary tracking-widest font-semibold">Template Catalog</p>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Pre-Made Chores</h1>
+                    <p class="text-gray-600 mt-2">Browse and add pre-made chore templates to your household.</p>
+                    <p class="text-sm text-gray-500 mt-2">Adding to: <span class="font-semibold text-gray-800">{{ selected_household.name }}</span></p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">{{ template_count }} templates available</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm font-medium text-gray-700">Filter by category:</label>
+                    <select id="categoryFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white">
+                        <option value="">All Categories</option>
+                        {% for value, label in category_choices %}
+                        <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500" id="selectedCount" aria-live="polite">0 selected</span>
+                    <button type="button" id="selectAllBtn" class="text-sm text-primary hover:underline">Select All</button>
+                </div>
+            </div>
+
+            <form method="post" id="templateForm">
+                {% csrf_token %}
+
+                {% for category_name, templates in categories.items %}
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold text-gray-800">{{ category_name }}</h3>
+                        <button type="button" class="text-xs text-primary hover:underline select-category-btn" data-category="{{ category_name }}">
+                            Select all
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {% for template in templates %}
+                        <label class="flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all template-item" data-category="{{ category_name }}">
+                            <input type="checkbox" name="templates" value="{{ template.id }}"
+                                class="mt-1 h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary template-checkbox">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-gray-800 text-sm">{{ template.title }}</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                        {% if template.difficulty == 'easy' %}bg-green-100 text-green-800
+                                        {% elif template.difficulty == 'medium' %}bg-yellow-100 text-yellow-800
+                                        {% elif template.difficulty == 'hard' %}bg-orange-100 text-orange-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ template.get_difficulty_display }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">{{ template.suggested_points }} pts</span>
+                                    {% if template.estimated_minutes %}
+                                    <span class="text-xs text-gray-400">~{{ template.estimated_minutes }}min</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-12 bg-gray-50 rounded-xl">
+                    <p class="text-gray-500">No templates available. Run <code>python manage.py seed_system_templates</code> to add pre-made templates.</p>
+                </div>
+                {% endfor %}
+
+                {% if categories %}
+                <div class="flex justify-end pt-4 border-t border-gray-200">
+                    {% include 'components/button.html' with type="submit" label="Add Selected to Household" variant="primary" size="lg" %}
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.template-checkbox');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const categoryBtns = document.querySelectorAll('.select-category-btn');
+    const categoryFilter = document.getElementById('categoryFilter');
+
+    function updateCount() {
+        const count = document.querySelectorAll('.template-checkbox:checked').length;
+        selectedCountEl.textContent = count + ' selected';
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+    selectAllBtn.addEventListener('click', function() {
+        const allChecked = document.querySelectorAll('.template-checkbox:checked').length === checkboxes.length;
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        this.textContent = allChecked ? 'Select All' : 'Deselect All';
+        updateCount();
+    });
+
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const category = this.dataset.category;
+            const categoryCheckboxes = document.querySelectorAll('.template-item[data-category="' + category + '"] .template-checkbox');
+            const allChecked = Array.from(categoryCheckboxes).every(cb => cb.checked);
+            categoryCheckboxes.forEach(cb => cb.checked = !allChecked);
+            this.textContent = allChecked ? 'Select all' : 'Deselect all';
+            updateCount();
+        });
+    });
+
+    categoryFilter.addEventListener('change', function() {
+        const url = new URL(window.location);
+        if (this.value) {
+            url.searchParams.set('category', this.value);
+        } else {
+            url.searchParams.delete('category');
+        }
+        window.location = url;
+    });
+
+    updateCount();
+});
+</script>
+{% endblock %}

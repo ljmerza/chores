@@ -30,6 +30,7 @@ from core.views import (
     AdminHubView,
     SetupWizardView,
     SetupWizardMembersView,
+    SetupWizardTemplatesView,
     PrivacyView,
     TermsView,
     FAQView,
@@ -38,7 +39,7 @@ from core.views import (
     complete_chore,
     redeem_reward
 )
-from chores.views import CreateChoreView, EditChoreView, ManageChoresView, ManageNotificationsView
+from chores.views import CreateChoreView, EditChoreView, ManageChoresView, ManageNotificationsView, TemplateCatalogView
 from households.views import ManageHouseholdView
 from rewards.views import CreateRewardView, EditRewardView, ManageRewardsView
 from rewards.views import RedeemRewardsView
@@ -62,9 +63,11 @@ urlpatterns = [
     path('invite/signup/', InviteSignupView.as_view(), name='invite_signup'),
     path('setup/', SetupWizardView.as_view(), name='setup_wizard'),
     path('setup/members/', SetupWizardMembersView.as_view(), name='setup_wizard_members'),
+    path('setup/templates/', SetupWizardTemplatesView.as_view(), name='setup_wizard_templates'),
     path('admin-hub/', AdminHubView.as_view(), name='admin_hub'),
     path('households/manage/', ManageHouseholdView.as_view(), name='manage_household'),
     path('chores/manage/', ManageChoresView.as_view(), name='manage_chores'),
+    path('chores/templates/', TemplateCatalogView.as_view(), name='template_catalog'),
     path('notifications/manage/', ManageNotificationsView.as_view(), name='manage_notifications'),
     path('chores/create/', CreateChoreView.as_view(), name='create_chore'),
     path('chores/<int:pk>/edit/', EditChoreView.as_view(), name='edit_chore'),

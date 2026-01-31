@@ -6,7 +6,9 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from households.models import Household, HouseholdMembership
 from core.forms import HomeAssistantSettingsForm, HomeAssistantTargetForm
-from .models import Chore, ChoreRotation, Notification
+from core.mixins import HouseholdAdminViewMixin
+from core.services.chores import create_chores_from_templates, get_system_templates_grouped_by_category
+from .models import Chore, ChoreTemplate, Notification
 from .forms import CreateChoreForm
 
 
@@ -180,50 +182,11 @@ class EditChoreView(LoginRequiredMixin, TemplateView):
         })
 
 
-class ManageChoresView(LoginRequiredMixin, TemplateView):
+class ManageChoresView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
     template_name = 'chores/manage.html'
     login_url = reverse_lazy('login')
-
-    def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-
-        if not self.households.exists():
-            messages.error(request, "Join or create a household to manage chores.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to manage chores.")
-            return redirect('home')
-
-        if not self._is_admin(request.user, self.selected_household):
-            messages.error(request, "You need to be an admin to manage chores.")
-            return redirect('home')
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(memberships__user=user).distinct()
-
-    def _selected_household(self):
-        requested = self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_admin(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(
-                household=household,
-                user=user,
-                role='admin'
-            ).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
+    no_household_message = "Join or create a household to manage chores."
+    no_permission_message = "You need to be an admin to manage chores."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -278,57 +241,23 @@ class ManageChoresView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class ManageNotificationsView(LoginRequiredMixin, TemplateView):
+class ManageNotificationsView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
     template_name = 'chores/manage_notifications.html'
     login_url = reverse_lazy('login')
+    no_household_message = "Join or create a household to manage notifications."
+    no_permission_message = "You need to be an admin to manage notifications."
 
     def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-
-        if not self.households.exists():
-            messages.error(request, "Join or create a household to manage notifications.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to manage notifications.")
-            return redirect('home')
-
-        if not self._is_admin(request.user, self.selected_household):
-            messages.error(request, "You need to be an admin to manage notifications.")
-            return redirect('home')
+        result = super().dispatch(request, *args, **kwargs)
+        # If parent dispatch redirected, return that
+        if hasattr(result, 'status_code') and result.status_code in (301, 302):
+            return result
 
         self.memberships = HouseholdMembership.objects.filter(
             household=self.selected_household
         ).select_related('user').order_by('user__first_name', 'user__username')
 
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(
-            memberships__user=user,
-            memberships__role='admin'
-        ).distinct()
-
-    def _selected_household(self):
-        requested = self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_admin(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(
-                household=household,
-                user=user,
-                role='admin'
-            ).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
+        return result
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -398,3 +327,58 @@ class ManageNotificationsView(LoginRequiredMixin, TemplateView):
         if post or self.request.method == "POST":
             return HomeAssistantSettingsForm(self.request.POST, instance=self.selected_household)
         return HomeAssistantSettingsForm(instance=self.selected_household)
+
+
+class TemplateCatalogView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
+    """Post-onboarding browsable catalog for adding chore templates."""
+    template_name = 'chores/template_catalog.html'
+    login_url = reverse_lazy('login')
+    no_household_message = "Join or create a household to browse templates."
+    no_permission_message = "You need to be an admin to add chore templates."
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        categories = get_system_templates_grouped_by_category()
+
+        # Category filter
+        category_filter = self.request.GET.get('category', '')
+        if category_filter:
+            categories = {
+                k: v for k, v in categories.items()
+                if v and v[0].category == category_filter
+            }
+
+        # Count total templates
+        template_count = sum(len(v) for v in categories.values())
+
+        context.update({
+            'categories': categories,
+            'category_choices': ChoreTemplate.CATEGORY_CHOICES,
+            'category_filter': category_filter,
+            'template_count': template_count,
+        })
+        return context
+
+    def post(self, request):
+        template_ids = request.POST.getlist('templates')
+        if not template_ids:
+            messages.warning(request, "No templates selected.")
+            return redirect(f"{reverse('template_catalog')}?household={self.selected_household.id}")
+
+        templates = ChoreTemplate.objects.filter(
+            id__in=template_ids,
+            household__isnull=True,
+            is_public=True
+        )
+
+        if templates.exists():
+            chores = create_chores_from_templates(
+                templates=list(templates),
+                household=self.selected_household,
+                created_by=request.user,
+                assignment_type='global'
+            )
+            messages.success(request, f"Added {len(chores)} chores to {self.selected_household.name}.")
+
+        return redirect(f"{reverse('manage_chores')}?household={self.selected_household.id}")

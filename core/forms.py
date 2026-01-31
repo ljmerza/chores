@@ -1,10 +1,11 @@
-from typing import Dict
+from typing import Dict, List
 
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from households.models import Household
+from chores.models import ChoreTemplate
 from .models import User
 
 TAILWIND_INPUT_CLASS = 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200'
@@ -346,3 +347,42 @@ class HomeAssistantSettingsForm(forms.ModelForm):
             'ha_default_target': forms.TextInput(attrs={'class': TAILWIND_INPUT_CLASS, 'placeholder': 'notify.mobile_app_default'}),
             'ha_verify_ssl': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary'}),
         }
+
+
+class TemplateSelectionForm(forms.Form):
+    """
+    Form for selecting pre-made chore templates during setup.
+    """
+    templates = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple()
+    )
+
+    def __init__(self, *args, categories=None, **kwargs):
+        """
+        Initialize the form with template choices.
+
+        Args:
+            categories: Optional pre-fetched dict of category -> templates.
+                       If not provided, will fetch from service.
+        """
+        super().__init__(*args, **kwargs)
+
+        if categories is None:
+            from core.services.chores import get_system_templates_grouped_by_category
+            categories = get_system_templates_grouped_by_category()
+
+        # Flatten categories to build choices and lookup dict
+        self.template_objects = {}
+        choices = []
+        for cat_templates in categories.values():
+            for t in cat_templates:
+                choices.append((str(t.id), t.title))
+                self.template_objects[str(t.id)] = t
+
+        self.fields['templates'].choices = choices
+
+    def get_selected_templates(self) -> List[ChoreTemplate]:
+        """Return the selected ChoreTemplate instances."""
+        selected_ids = self.cleaned_data.get('templates', [])
+        return [self.template_objects[tid] for tid in selected_ids if tid in self.template_objects]

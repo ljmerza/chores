@@ -5,53 +5,16 @@ from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import TemplateView
 from core.models import User
+from core.mixins import HouseholdAdminViewMixin
 from .forms import HouseholdDetailsForm, InviteMemberForm
 from .models import Household, HouseholdMembership, UserScore
 
 
-class ManageHouseholdView(LoginRequiredMixin, TemplateView):
+class ManageHouseholdView(HouseholdAdminViewMixin, LoginRequiredMixin, TemplateView):
     template_name = 'households/manage.html'
     login_url = reverse_lazy('login')
-
-    def dispatch(self, request, *args, **kwargs):
-        self.households = self._household_queryset()
-        if not self.households.exists():
-            messages.error(request, "Join or create a household before managing it.")
-            return redirect('home')
-
-        self.selected_household = self._selected_household()
-        if not self.selected_household:
-            messages.error(request, "Select a household to manage.")
-            return redirect('home')
-
-        if not self._is_admin(request.user, self.selected_household):
-            messages.error(request, "You need to be an admin to manage this household.")
-            return redirect('home')
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def _household_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.role == 'admin':
-            return Household.objects.all()
-        return Household.objects.filter(memberships__user=user).distinct()
-
-    def _selected_household(self):
-        requested = self.request.POST.get('household_id') or self.request.GET.get('household')
-        if requested:
-            return self.households.filter(id=requested).first()
-        return self.households.first()
-
-    def _is_admin(self, user, household):
-        return (
-            HouseholdMembership.objects.filter(
-                household=household,
-                user=user,
-                role='admin'
-            ).exists()
-            or user.is_staff
-            or user.role == 'admin'
-        )
+    no_household_message = "Join or create a household before managing it."
+    no_permission_message = "You need to be an admin to manage this household."
 
     def _redirect_self(self):
         return redirect(f"{reverse('manage_household')}?household={self.selected_household.id}")
